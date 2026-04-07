@@ -13,12 +13,15 @@ import {
   Package,
   ShieldAlert,
   UserCog,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "./ui-shared";
 
 function AppLayout({ children, role }) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(false);
   const { data: user } = useGetCurrentUser();
   const logoutMut = useLogout();
   const queryClient = useQueryClient();
@@ -37,7 +40,6 @@ function AppLayout({ children, role }) {
   };
 
   // ✅ FIX: Use ~ prefix so wouter v3 treats these as absolute paths
-  // (layout is rendered INSIDE nested route contexts like /admin, /client, /operations)
   const allNavs = {
     admin: [
       { label: "Dashboard", href: "~/admin", icon: LayoutDashboard },
@@ -68,11 +70,8 @@ function AppLayout({ children, role }) {
     return true;
   });
 
-  // For active link detection: useLocation() returns path relative to nesting base
-  // So inside /operations context, location would be "/" or "/orders" or "/orders/1"
-  // We need to compare against the path WITHOUT the ~ prefix and WITHOUT the role prefix
+  // Active link detection
   const isActiveLink = (href) => {
-    // Strip ~ prefix and role prefix to get the relative path for comparison
     const clean = href.replace(/^~\//, "/");
     const rolePrefix = `/${role}`;
     const relativePath = clean.startsWith(rolePrefix)
@@ -83,6 +82,25 @@ function AppLayout({ children, role }) {
       return location === "/" || location === "";
     }
     return location === relativePath || location.startsWith(relativePath + "/");
+  };
+
+  const toggleSidebar = () => setCollapsed(!collapsed);
+
+  // Get role abbreviation for display
+  const getRoleAbbreviation = () => {
+    if (!user?.role) return "?";
+    const roleMap = {
+      admin: "A",
+      client: "C",
+      client_admin: "CA",
+      operations: "OPS",
+    };
+    return roleMap[user.role] || user.role.substring(0, 1).toUpperCase();
+  };
+
+  const getRoleFullName = () => {
+    if (!user?.role) return "User";
+    return user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (
@@ -98,18 +116,34 @@ function AppLayout({ children, role }) {
       {/* Sidebar */}
       <aside
         className={`
-        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-slate-950 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out
+        fixed lg:sticky top-0 left-0 z-50 h-screen bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 ease-in-out
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        ${collapsed ? "w-20" : "w-64"}
       `}
       >
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <ShieldAlert className="w-6 h-6 text-blue-500 mr-2" />
-          <span className="text-white font-bold text-lg tracking-tight">
-            DiligencePro
-          </span>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <ShieldAlert className="w-6 h-6 text-blue-500 flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-white font-bold text-lg tracking-tight whitespace-nowrap">
+                DiligencePro
+              </span>
+            )}
+          </div>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-md hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-2">
           {currentNav.map((item) => {
             const isActive = isActiveLink(item.href);
             return (
@@ -117,17 +151,19 @@ function AppLayout({ children, role }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
+                title={collapsed ? item.label : ""}
               >
                 <div
                   className={`
-                  flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 cursor-pointer
-                  ${isActive ? "bg-blue-600/10 text-blue-400" : "hover:bg-slate-800/50 hover:text-white"}
-                `}
+                    flex items-center rounded-lg font-medium transition-all duration-200 cursor-pointer
+                    ${collapsed ? "justify-center py-3 px-2" : "px-4 py-3"}
+                    ${isActive ? "bg-blue-600/10 text-blue-400" : "hover:bg-slate-800/50 hover:text-white"}
+                  `}
                 >
                   <item.icon
-                    className={`w-5 h-5 mr-3 ${isActive ? "text-blue-400" : "text-slate-500"}`}
+                    className={`w-5 h-5 flex-shrink-0 ${collapsed ? "" : "mr-3"} ${isActive ? "text-blue-400" : "text-slate-500"}`}
                   />
-                  {item.label}
+                  {!collapsed && <span className="truncate">{item.label}</span>}
                 </div>
               </Link>
             );
@@ -135,22 +171,34 @@ function AppLayout({ children, role }) {
         </div>
 
         <div className="p-4 border-t border-slate-800">
-          <div className="px-4 py-3 bg-slate-900 rounded-xl mb-3">
-            <p className="text-sm font-medium text-white truncate">
-              {user?.fullName}
-            </p>
-            <p className="text-xs text-slate-500 truncate">
-              {user?.clientCompanyName || "Internal Team"}
-            </p>
-          </div>
+          {collapsed ? (
+            <div 
+              className="flex justify-center"
+              title={`${user?.fullName} • ${getRoleFullName()}`}
+            >
+              <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center text-blue-400 font-semibold text-sm hover:bg-blue-600/40 transition-colors cursor-pointer">
+                {getRoleAbbreviation()}
+              </div>
+            </div>
+          ) : (
+            <div className="px-4 py-3 bg-slate-900 rounded-xl mb-3">
+              <p className="text-sm font-medium text-white truncate">
+                {user?.fullName}
+              </p>
+              <p className="text-xs text-slate-500 truncate">
+                {user?.clientCompanyName || getRoleFullName()}
+              </p>
+            </div>
+          )}
           <Button
             variant="ghost"
-            className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800"
+            className={`w-full ${collapsed ? "justify-center px-2" : "justify-start"} text-slate-400 hover:text-white hover:bg-slate-800`}
             onClick={handleLogout}
             isLoading={logoutMut.isPending}
+            title={collapsed ? "Sign Out" : ""}
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            Sign Out
+            <LogOut className="w-5 h-5" />
+            {!collapsed && <span className="ml-3">Sign Out</span>}
           </Button>
         </div>
       </aside>

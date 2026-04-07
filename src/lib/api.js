@@ -19,7 +19,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// RESPONSE interceptor: 401 → clear token, redirect
+// RESPONSE interceptor: 401 -> clear token, redirect
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -275,23 +275,21 @@ export const useListOperationsOrders = (params) =>
 // Expects full order with providerSearchSnapshot, analystEnrichment, generatedDocuments
 export const useGetOperationsOrder = (id) =>
   useQuery({
-    queryKey: [`opsOrder-${id}`],
-    queryFn: () =>
-      api.get(`/api/operations/orders/${id}`).then((r) => r.data),
+    queryKey: ["opsOrder", id],
+    queryFn: () => api.get(`/api/operations/orders/${id}`).then((r) => r.data),
     enabled: !!id,
   });
 
-// ==================== OPERATIONS: FETCH COMPANY DATA ====================
-// order-detail calls: fetchMut.mutate({ id }, { onSuccess: (data) => setLocalReport(data.report) })
 export const useFetchComprehensiveReportData = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ id }) =>
-      api
-        .post(`/api/operations/orders/${id}/fetch-data`)
-        .then((r) => r.data),
+      api.post(`/api/operations/orders/${id}/fetch-data`).then((r) => r.data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: [`opsOrder-${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["opsOrder", id] });
+      queryClient.invalidateQueries({ queryKey: ["opsOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["opsStats"] });
     },
   });
 };

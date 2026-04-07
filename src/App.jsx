@@ -8,6 +8,8 @@ import Login from "./pages/login";
 import AdminRouter from "./pages/admin";
 import ClientRouter from "./pages/client";
 import OpsRouter from "./pages/operations";
+import ComprehensiveRequests from './pages/ComprehensiveRequests';
+import OperationsRequests from './pages/OperationsRequests';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +43,7 @@ function ProtectedRoute({ children, allowedRoles, rolePath }) {
 }
 
 function IndexRoute() {
-  // ✅ FIX: destructure as { data: user } — useQuery returns { data }, not { user }
+  // ✅ FIX: destructure as { data: user } - useQuery returns { data }, not { user }
   const { data: user, isLoading } = useGetCurrentUser();
 
   if (isLoading) return null;
@@ -81,10 +83,13 @@ function AppContent() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/comprehensive-requests" element={<ComprehensiveRequests />} />
+      <Route path="/operations-requests" element={<OperationsRequests />} />
       <Route path="/" component={IndexRoute} />
       <Route>
         <Redirect to="/" />
       </Route>
+
     </Switch>
   );
 }
