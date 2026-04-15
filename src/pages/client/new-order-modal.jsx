@@ -36,6 +36,8 @@ function NewOrderModal({ isOpen, onClose }) {
   const [notes, setNotes] = useState("");
   const [error, setError] = useState(null);
   const [createdOrder, setCreatedOrder] = useState(null);
+  const [autoFetchStatus, setAutoFetchStatus] = useState(null);
+  const [autoFetchMessage, setAutoFetchMessage] = useState("");
 
   const ddrProduct = entitlements?.find((p) => p.code === "DDR");
   const searchMut = useSearchCompanies();
@@ -52,6 +54,8 @@ function NewOrderModal({ isOpen, onClose }) {
     setNotes("");
     setError(null);
     setCreatedOrder(null);
+    setAutoFetchStatus(null);
+    setAutoFetchMessage("");
     searchMut.reset();
     onClose();
   }
@@ -88,6 +92,8 @@ function NewOrderModal({ isOpen, onClose }) {
       {
         onSuccess: (order) => {
           setCreatedOrder(order);
+          setAutoFetchStatus(order?.autoFetchStatus || "success");
+          setAutoFetchMessage(order?.autoFetchMessage || "Order is processed and data is fetched successfully.");
           setStep("success");
           queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
           queryClient.invalidateQueries({ queryKey: ["clientStats"] });
@@ -339,15 +345,34 @@ function NewOrderModal({ isOpen, onClose }) {
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-5">
                 <CheckCircle2 className="w-9 h-9 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Order Placed Successfully!</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                {autoFetchStatus === "failed" ? "Order Placed Successfully!" : "Order Processed Successfully!"}
+              </h3>
               <p className="text-slate-600 max-w-sm text-sm leading-relaxed mb-4">
-                Your order has been placed. We will notify you once the report is completed.
+                {autoFetchStatus === "failed"
+                  ? "Your order has been placed, but automatic data fetch did not complete."
+                  : "Your order is processed and data is fetched successfully."}
               </p>
+              {autoFetchMessage && (
+                <div
+                  className={`mb-4 max-w-lg rounded-xl px-4 py-3 text-sm border ${
+                    autoFetchStatus === "failed"
+                      ? "bg-amber-50 border-amber-200 text-amber-700"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  }`}
+                >
+                  {autoFetchMessage}
+                </div>
+              )}
               <div className="bg-slate-50 border border-slate-200 rounded-xl px-6 py-3 mb-6 inline-flex items-center gap-2">
                 <span className="text-xs text-slate-500">Order Number</span>
                 <span className="font-mono font-bold text-blue-700 text-sm">{createdOrder.orderNumber}</span>
               </div>
-              <p className="text-xs text-slate-400">Track your order in My Orders.</p>
+              <p className="text-xs text-slate-400">
+                {autoFetchStatus === "failed"
+                  ? "Track your order in My Orders. Operations can re-fetch data."
+                  : "Track your order in My Orders."}
+              </p>
             </div>
           )}
         </div>

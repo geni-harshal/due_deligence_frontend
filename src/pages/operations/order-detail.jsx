@@ -2872,6 +2872,7 @@ function OpsOrderDetail() {
   const [toast, setToast] = useState(null);
   const [localReport, setLocalReport] = useState(null);
   const [localDecision, setLocalDecision] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null);
 
   useEffect(() => {
     if (order?.analystEnrichment) {
@@ -2885,8 +2886,16 @@ function OpsOrderDetail() {
       }
     }
 
-    if (order?.providerSearchSnapshot?.data) {
+    if (order?.latestSnapshot?.report) {
+      setLocalReport(order.latestSnapshot.report);
+    } else if (order?.providerSearchSnapshot?.data) {
       setLocalReport(order.providerSearchSnapshot.data);
+    }
+
+    if (Array.isArray(order?.versions) && order.versions.length > 0) {
+      setSelectedVersion(order.versions[0].version);
+    } else {
+      setSelectedVersion(null);
     }
   }, [order]);
 
@@ -2894,7 +2903,7 @@ function OpsOrderDetail() {
     setToast({ t, m });
     setTimeout(() => setToast(null), 3500);
   };
-  const inv = () => qc.invalidateQueries({ queryKey: [`opsOrder-${id}`] });
+  const inv = () => qc.invalidateQueries({ queryKey: ["opsOrder", id] });
 
   if (!id || isNaN(id))
     return (
@@ -2917,6 +2926,8 @@ function OpsOrderDetail() {
     );
 
   const snapshot = order?.providerSearchSnapshot || null;
+  const versions = Array.isArray(order?.versions) ? order.versions : [];
+  const selectedVersionData = versions.find((v) => String(v.version) === String(selectedVersion));
 
   const hasData = !!(snapshot?.data || localReport);
   const hasModels = !!(localDecision || order.analystEnrichment?.decisionOutputs);
@@ -2924,7 +2935,9 @@ function OpsOrderDetail() {
   const done = order.status === "completed";
 
   const report =
+    selectedVersionData?.report ||
     localReport ||
+    order?.latestSnapshot?.report ||
     snapshot?.data ||
     null;
 
@@ -2937,10 +2950,15 @@ function OpsOrderDetail() {
       {
         onSuccess: (d) => {
           setLocalReport(
+            d?.latestSnapshot?.report ||
+            d?.latest?.report ||
             d?.latestSnapshot?.data ||
             d?.latest?.data ||
             null
           );
+          if (Array.isArray(d?.versions) && d.versions.length > 0) {
+            setSelectedVersion(d.versions[0].version);
+          }
 
           inv();
           notify("ok", "Latest version fetched successfully");
@@ -3076,22 +3094,38 @@ function OpsOrderDetail() {
       {/* ── Company Data Tab ── */}
       {tab === "data" && (
         <div className="space-y-5">
+          <div className="flex justify-end gap-2">
+            {versions.length > 0 && (
+              <select
+                value={selectedVersion ?? ""}
+                onChange={(e) => {
+                  const nextVersion = Number(e.target.value);
+                  setSelectedVersion(nextVersion);
+                  const next = versions.find((v) => v.version === nextVersion);
+                  if (next?.report) setLocalReport(next.report);
+                }}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
+              >
+                {versions.map((v) => (
+                  <option key={v.id || v.version} value={v.version}>
+                    Version {v.version} ({formatDate(v.fetchedAt)})
+                  </option>
+                ))}
+              </select>
+            )}
+            <Button variant="outline" size="sm" onClick={doFetch} isLoading={fetchMut.isPending}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Re-fetch
+            </Button>
+          </div>
           {!hasData ? (
             <Card className="p-12 text-center">
               <Building2 className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-slate-700 mb-2">No Data Fetched Yet</h3>
-              <p className="text-slate-500 text-sm mb-6">Click below to fetch comprehensive company data from Probe42.</p>
-              <Button size="lg" onClick={doFetch} isLoading={fetchMut.isPending}>
-                <RefreshCw className="w-4 h-4 mr-2" /> Fetch Company Data
-              </Button>
+              <h3 className="text-lg font-bold text-slate-700 mb-2">No Data Available Yet</h3>
+              <p className="text-slate-500 text-sm mb-2">Data should be auto-fetched when client places the order.</p>
+              <p className="text-slate-500 text-sm">Use Re-fetch to pull a fresh version if required.</p>
             </Card>
           ) : (
             <>
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" onClick={doFetch} isLoading={fetchMut.isPending}>
-                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Re-fetch
-                </Button>
-              </div>
               <CompanyDataPanel report={report} />
               <div className="flex justify-end pt-4">
                 <Button onClick={() => setTab("notes")} size="lg">
