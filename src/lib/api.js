@@ -309,6 +309,22 @@ export const useSaveAnalystEnrichment = () => {
   });
 };
 
+// Credit Report
+export const useGenerateCreditReport = () => {
+  return useMutation({
+    mutationFn: (orderId) =>
+      api.post(`/api/operations/orders/${orderId}/generate-credit-report`).then((r) => r.data),
+  });
+};
+
+export const useGetCreditReport = (orderId) =>
+  useQuery({
+    queryKey: ["creditReport", orderId],
+    queryFn: () =>
+      api.get(`/api/operations/orders/${orderId}/credit-report`).then((r) => r.data),
+    enabled: !!orderId,
+  });
+  
 // ==================== OPERATIONS: RUN DECISION MODELS ====================
 // order-detail calls: modelMut.mutate({ id }, { onSuccess: (data) => setLocalDecision(data) })
 export const useRunDecisionModels = () => {

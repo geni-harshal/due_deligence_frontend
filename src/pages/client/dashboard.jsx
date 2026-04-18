@@ -11,6 +11,7 @@ import {
   Badge,
 } from "@/components/ui-shared";
 import {
+  Eye,
   FileText,
   CheckCircle2,
   Clock,
@@ -23,6 +24,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { Link } from "wouter";
 import NewOrderModal from "./new-order-modal";
+
 
 function DownloadButton({ orderId, orderNumber }) {
   const [loading, setLoading] = useState(false);
@@ -139,7 +141,14 @@ function ClientDashboard() {
                     {formatDate(order.completedAt || order.createdAt)}
                   </p>
                 </div>
-                <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
+                <div className="flex items-center gap-2">
+                  <Link href={`~/client/report/${order.id}`}>
+                    <Button size="sm" variant="outline" title="View Credit Report">
+                      <Eye className="w-3.5 h-3.5 mr-1" /> View
+                    </Button>
+                  </Link>
+                  <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
+                </div>
               </div>
             ))}
           </div>
@@ -166,18 +175,19 @@ function ClientDashboard() {
                 <th className="px-6 py-3 font-medium whitespace-nowrap">Product</th>
                 <th className="px-6 py-3 font-medium">Status</th>
                 <th className="px-6 py-3 font-medium whitespace-nowrap">Date</th>
+                <th className="px-6 py-3 font-medium" />
               </tr>
             </thead>
             {/* FIX: Wrap skeleton in <tbody> to avoid direct <tr> child of <table> */}
             {ordersLoading ? (
               <tbody>
-                <TableSkeleton rows={4} cols={5} />
+                <TableSkeleton rows={4} cols={6} />
               </tbody>
             ) : (
               <tbody className="divide-y divide-slate-50">
                 {recentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <EmptyState
                         icon={<FileText className="w-10 h-10" />}
                         title="No orders yet"
@@ -212,6 +222,13 @@ function ClientDashboard() {
                       </td>
                       <td className="px-6 py-4 text-slate-400 whitespace-nowrap">
                         {formatDate(order.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link href={`~/client/report/${order.id}`}>
+                          <Button size="sm" variant="ghost" title="View Credit Report">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                        </Link>
                       </td>
                     </tr>
                   ))

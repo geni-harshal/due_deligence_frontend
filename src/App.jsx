@@ -10,6 +10,7 @@ import ClientRouter from "./pages/client";
 import OpsRouter from "./pages/operations";
 import ComprehensiveRequests from './pages/ComprehensiveRequests';
 import OperationsRequests from './pages/OperationsRequests';
+import ClientReportViewer from "./pages/client/ReportViewerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,11 +86,18 @@ function AppContent() {
 
       <Route path="/comprehensive-requests" element={<ComprehensiveRequests />} />
       <Route path="/operations-requests" element={<OperationsRequests />} />
+
+      {/* Credit Report Viewer Route – must be before "/" */}
+      {/* <Route path="/client/report/:orderId">
+        <ProtectedRoute allowedRoles={["client_"]} rolePath="client">
+          <ClientReportViewer />
+        </ProtectedRoute>
+      </Route> */}
+
       <Route path="/" component={IndexRoute} />
       <Route>
         <Redirect to="/" />
       </Route>
-
     </Switch>
   );
 }

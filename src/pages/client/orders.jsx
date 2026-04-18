@@ -10,8 +10,9 @@ import {
   EmptyState,
 } from "@/components/ui-shared";
 import { formatDate } from "@/lib/utils";
-import { Plus, Download, FileText, Hash, MapPin, Loader2 } from "lucide-react";
+import { Eye, Plus, Download, FileText, Hash, MapPin, Loader2 } from "lucide-react";
 import NewOrderModal from "./new-order-modal";
+import { Link } from "wouter";
 
 function CINBadge({ cin }) {
   if (!cin) return <span className="text-slate-300 text-xs">-</span>;
@@ -179,12 +180,16 @@ function ClientOrders() {
                         {formatDate(order.updatedAt)}
                       </td>
                       <td className="px-5 py-4 text-right">
-                        {isCompleted && (
-                          <DownloadButton
-                            orderId={order.id}
-                            orderNumber={order.orderNumber}
-                          />
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`~/client/report/${order.id}`}>
+                            <Button size="sm" variant="ghost" title="View Credit Report">
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                          </Link>
+                          {isCompleted && (
+                            <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

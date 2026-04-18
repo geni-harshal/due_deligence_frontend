@@ -2886,10 +2886,15 @@ function OpsOrderDetail() {
       }
     }
 
+    // Try multiple fallback paths for report data
     if (order?.latestSnapshot?.report) {
       setLocalReport(order.latestSnapshot.report);
     } else if (order?.providerSearchSnapshot?.data) {
       setLocalReport(order.providerSearchSnapshot.data);
+    } else if (order?.latest?.report) {
+      setLocalReport(order.latest.report);
+    } else if (order?.latest?.data) {
+      setLocalReport(order.latest.data);
     }
 
     if (Array.isArray(order?.versions) && order.versions.length > 0) {
@@ -2929,16 +2934,23 @@ function OpsOrderDetail() {
   const versions = Array.isArray(order?.versions) ? order.versions : [];
   const selectedVersionData = versions.find((v) => String(v.version) === String(selectedVersion));
 
-  const hasData = !!(snapshot?.data || localReport);
+  // Enhanced data availability check
+  const hasSnapshotData = !!(snapshot?.data || order?.latestSnapshot?.data || order?.latest?.data);
+  const hasData = !!(hasSnapshotData || localReport);
+  
   const hasModels = !!(localDecision || order.analystEnrichment?.decisionOutputs);
   const hasPdf = order.generatedDocuments?.some((d) => d.documentType === "due_diligence_report" && d.status === "ready");
   const done = order.status === "completed";
 
+  // Enhanced report extraction with all fallback paths
   const report =
     selectedVersionData?.report ||
     localReport ||
     order?.latestSnapshot?.report ||
     snapshot?.data ||
+    order?.latestSnapshot?.data ||
+    order?.latest?.data ||
+    order?.latest?.report ||
     null;
 
 
@@ -2954,6 +2966,7 @@ function OpsOrderDetail() {
             d?.latest?.report ||
             d?.latestSnapshot?.data ||
             d?.latest?.data ||
+            d?.providerSearchSnapshot?.data ||
             null
           );
           if (Array.isArray(d?.versions) && d.versions.length > 0) {
