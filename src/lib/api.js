@@ -3,7 +3,7 @@ import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Axios instance with Bearer token
-const api = axios.create({
+export const api = axios.create({
   baseURL: "http://localhost:8080",
 });
 
@@ -309,6 +309,22 @@ export const useSaveAnalystEnrichment = () => {
   });
 };
 
+// Credit Report
+export const useGenerateCreditReport = () => {
+  return useMutation({
+    mutationFn: (orderId) =>
+      api.post(`/api/operations/orders/${orderId}/generate-credit-report`).then((r) => r.data),
+  });
+};
+
+export const useGetCreditReport = (orderId) =>
+  useQuery({
+    queryKey: ["creditReport", orderId],
+    queryFn: () =>
+      api.get(`/api/operations/orders/${orderId}/credit-report`).then((r) => r.data),
+    enabled: !!orderId,
+  });
+  
 // ==================== OPERATIONS: RUN DECISION MODELS ====================
 // order-detail calls: modelMut.mutate({ id }, { onSuccess: (data) => setLocalDecision(data) })
 export const useRunDecisionModels = () => {

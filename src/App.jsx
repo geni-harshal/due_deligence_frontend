@@ -10,6 +10,7 @@ import ClientRouter from "./pages/client";
 import OpsRouter from "./pages/operations";
 import ComprehensiveRequests from './pages/ComprehensiveRequests';
 import OperationsRequests from './pages/OperationsRequests';
+import ClientReportViewer from "./pages/client/ReportViewerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,7 +21,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function ProtectedRoute({ children, allowedRoles, rolePath }) {
+function ProtectedRoute({ children, allowedRoles, rolePath, isFullScreen }) {
   const { data: user, isLoading } = useGetCurrentUser();
 
   if (isLoading) {
@@ -38,6 +39,11 @@ function ProtectedRoute({ children, allowedRoles, rolePath }) {
   );
 
   if (!hasAccess) return <Redirect to="/" replace />;
+
+  // For full-screen routes, render children without the AppLayout
+  if (isFullScreen) {
+    return children;
+  }
 
   return <AppLayout role={rolePath}>{children}</AppLayout>;
 }
@@ -85,11 +91,18 @@ function AppContent() {
 
       <Route path="/comprehensive-requests" element={<ComprehensiveRequests />} />
       <Route path="/operations-requests" element={<OperationsRequests />} />
+
+      {/* Full-Screen Report Viewer Route – No Layout (No Navbar/Sidebar) */}
+      <Route path="/report/:orderId">
+        <ProtectedRoute allowedRoles={["client_"]} rolePath="client" isFullScreen={true}>
+          <ClientReportViewer />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/" component={IndexRoute} />
       <Route>
         <Redirect to="/" />
       </Route>
-
     </Switch>
   );
 }
