@@ -3,7 +3,7 @@ import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Axios instance with Bearer token
-const api = axios.create({
+export const api = axios.create({
   baseURL: "http://localhost:8080",
 });
 

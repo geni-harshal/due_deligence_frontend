@@ -8,6 +8,7 @@ import {
   useGeneratePdfReport,
   usePublishOrder,
 } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, Button, StatusBadge, PriorityBadge, Label, Textarea, Input } from "@/components/ui-shared";
 import { formatDate } from "@/lib/utils";
@@ -68,9 +69,9 @@ const money2 = (n) =>
   n == null || n === "" || Number.isNaN(Number(n))
     ? "—"
     : Number(n).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
 const pct2 = (n) =>
   n == null || n === "" || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(2);
@@ -199,7 +200,7 @@ function ShowMore({ items, render, n = 10, label = "items" }) {
       </tr>
     );
   }
-  return <>{elements}</>;
+  return elements;
 }
 
 function Empty({ text = "No data available" }) {
@@ -740,13 +741,13 @@ function CompanyDataPanel({ report: r }) {
                         return (rank[a?.type_of_transaction] || 99) - (rank[b?.type_of_transaction] || 99);
                       })
                       .map((row, i) => (
-                      <tr key={i}>
-                        <td className="px-4 py-2">{txt(row?.legal_name || row?.name)}</td>
-                        <td className="px-4 py-2">{txt(row?.relationship)}</td>
-                        <td className="px-4 py-2">{txt(row?.type_of_transaction)}</td>
-                        <td className="px-4 py-2">{row?.amount != null && row?.amount !== "****" ? money2(row.amount) : txt(row?.amount)}</td>
-                      </tr>
-                    ))}
+                        <tr key={i}>
+                          <td className="px-4 py-2">{txt(row?.legal_name || row?.name)}</td>
+                          <td className="px-4 py-2">{txt(row?.relationship)}</td>
+                          <td className="px-4 py-2">{txt(row?.type_of_transaction)}</td>
+                          <td className="px-4 py-2">{row?.amount != null && row?.amount !== "****" ? money2(row.amount) : txt(row?.amount)}</td>
+                        </tr>
+                      ))}
                   </Tbl>
                 </div>
               ) : null
@@ -757,36 +758,36 @@ function CompanyDataPanel({ report: r }) {
     );
   };
 
-const renderMsme = () => {
-  const latest = r?.msme_supplier_payment_delays?.delays_for_period || {};
-  const delays = arr(latest.delays);
+  const renderMsme = () => {
+    const latest = r?.msme_supplier_payment_delays?.delays_for_period || {};
+    const delays = arr(latest.delays);
 
-  return (
-    <div className="space-y-4">
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <KV label="Latest Period" value={latest.latest_period} />
-        <KV
-          label="Total Amount Due (INR)"
-          value={latest.total_amount_due_for_period != null ? money2(latest.total_amount_due_for_period) : null}
-        />
+    return (
+      <div className="space-y-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <KV label="Latest Period" value={latest.latest_period} />
+          <KV
+            label="Total Amount Due (INR)"
+            value={latest.total_amount_due_for_period != null ? money2(latest.total_amount_due_for_period) : null}
+          />
+        </div>
+
+        {delays.length ? (
+          <Tbl headers={["Supplier Name", "PAN", "Amount Due (Rs. INR)"]}>
+            {delays.map((d, i) => (
+              <tr key={i}>
+                <td className="px-4 py-2">{txt(d?.supplier_name)}</td>
+                <td className="px-4 py-2 font-mono">{txt(d?.supplier_pan)}</td>
+                <td className="px-4 py-2">{d?.amount_due != null ? money2(d.amount_due) : "—"}</td>
+              </tr>
+            ))}
+          </Tbl>
+        ) : (
+          <Empty />
+        )}
       </div>
-
-      {delays.length ? (
-        <Tbl headers={["Supplier Name", "PAN", "Amount Due (Rs. INR)"]}>
-          {delays.map((d, i) => (
-            <tr key={i}>
-              <td className="px-4 py-2">{txt(d?.supplier_name)}</td>
-              <td className="px-4 py-2 font-mono">{txt(d?.supplier_pan)}</td>
-              <td className="px-4 py-2">{d?.amount_due != null ? money2(d.amount_due) : "—"}</td>
-            </tr>
-          ))}
-        </Tbl>
-      ) : (
-        <Empty />
-      )}
-    </div>
-  );
-};
+    );
+  };
 
   const renderFinancialParameters = () => {
     if (!finParams.length) return <Empty />;
@@ -932,347 +933,347 @@ const renderMsme = () => {
     );
   };
 
-const renderStructureSummary = () => {
-  const summary = arr(r.shareholdings_summary)[0] || {};
-  const promoterEq = arr(r.shareholdings).find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "promoter" &&
-      String(s?.category || "").toLowerCase() === "equity"
-  );
-  const publicEq = arr(r.shareholdings).find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "public" &&
-      String(s?.category || "").toLowerCase() === "equity"
-  );
+  const renderStructureSummary = () => {
+    const summary = arr(r.shareholdings_summary)[0] || {};
+    const promoterEq = arr(r.shareholdings).find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "promoter" &&
+        String(s?.category || "").toLowerCase() === "equity"
+    );
+    const publicEq = arr(r.shareholdings).find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "public" &&
+        String(s?.category || "").toLowerCase() === "equity"
+    );
 
-  return (
-    <Tbl
-      headers={[
-        "Promoter %",
-        "Public %",
-        "No. of Shareholders",
-        "Total Equity Shares",
-        "Total Preference Shares",
-      ]}
-    >
-      <tr>
-        <td className="px-4 py-2">{pct2(promoterEq?.total_percentage_of_shares)}</td>
-        <td className="px-4 py-2">{pct2(publicEq?.total_percentage_of_shares)}</td>
-        <td className="px-4 py-2">
-          {summary.total != null ? `${summary.total} [Promoter(s) ${summary.promoter ?? summary.total}]` : "—"}
-        </td>
-        <td className="px-4 py-2">{summary.total_equity_shares != null ? fmt(summary.total_equity_shares) : "—"}</td>
-        <td className="px-4 py-2">{summary.total_preference_shares != null ? fmt(summary.total_preference_shares) : "—"}</td>
-      </tr>
-    </Tbl>
-  );
-};
-
-const renderShareholdingPatternTable = (equityRow, preferenceRow, title) => {
-  const categories = [
-    { label: "Individual / Hindu Undivided Family", group: true },
-    { label: "(i) Indian", field: "indian_held" },
-    { label: "(ii) Non-resident Indian (others)", field: "nri_held" },
-    { label: "(iii) Foreign national (other than NRI)", field: "foreign_held_other_than_nri" },
-    { label: "Government", group: true },
-    { label: "(i) Central Government", field: "central_government_held" },
-    { label: "(ii) State Government", field: "state_government_held" },
-    { label: "(iii) Government companies", field: "government_company_held" },
-    { label: "Insurance companies", field: "insurance_company_held" },
-    { label: "Banks", field: "bank_held" },
-    { label: "Financial institutions", field: "financial_institutions_held" },
-    { label: "Foreign institutional investors", field: "financial_institutions_investors_held" },
-    { label: "Mutual funds", field: "mutual_funds_held" },
-    { label: "Venture capital", field: "venture_capital_held" },
-    { label: "Body corporate (not mentioned above)", field: "body_corporate_held" },
-    { label: "Others", field: "others_held" },
-    { label: "Total", field: "total", bold: true },
-  ];
-
-  return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+    return (
       <Tbl
         headers={[
-          "Category",
-          "Equity Number of Shares",
-          "Equity Percentage",
-          "Preference Number of Shares",
-          "Preference Percentage",
+          "Promoter %",
+          "Public %",
+          "No. of Shareholders",
+          "Total Equity Shares",
+          "Total Preference Shares",
         ]}
       >
-        {categories.map((item, i) => {
-          if (item.group) {
-            return (
-              <tr key={`group-${i}`} className="bg-slate-50">
-                <td className="px-4 py-2 font-semibold text-slate-700" colSpan={5}>
-                  {item.label}
-                </td>
-              </tr>
-            );
-          }
-
-          const eqNo = equityRow?.[`${item.field}_no_of_shares`];
-          const eqPct = equityRow?.[`${item.field}_percentage_of_shares`];
-          const prNo = preferenceRow?.[`${item.field}_no_of_shares`];
-          const prPct = preferenceRow?.[`${item.field}_percentage_of_shares`];
-
-          return (
-            <tr key={`${item.field}-${i}`} className={item.bold ? "font-semibold" : ""}>
-              <td className="px-4 py-2 pl-6">{item.label}</td>
-              <td className="px-4 py-2">{eqNo != null ? fmt(eqNo) : "—"}</td>
-              <td className="px-4 py-2">{eqPct != null ? pct2(eqPct) : "—"}</td>
-              <td className="px-4 py-2">{prNo != null ? fmt(prNo) : "—"}</td>
-              <td className="px-4 py-2">{prPct != null ? pct2(prPct) : "—"}</td>
-            </tr>
-          );
-        })}
-      </Tbl>
-    </div>
-  );
-};
-
-const renderShareholdingPattern = () => {
-  const rows = arr(r.shareholdings);
-  const promoterEq = rows.find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "promoter" &&
-      String(s?.category || "").toLowerCase() === "equity"
-  );
-  const promoterPref = rows.find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "promoter" &&
-      String(s?.category || "").toLowerCase() === "preference"
-  );
-  const publicEq = rows.find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "public" &&
-      String(s?.category || "").toLowerCase() === "equity"
-  );
-  const publicPref = rows.find(
-    (s) =>
-      String(s?.shareholders || "").toLowerCase() === "public" &&
-      String(s?.category || "").toLowerCase() === "preference"
-  );
-
-  const fyLabel = fyEndLabel(arr(r.shareholdings_summary)[0]?.financial_year || promoterEq?.financial_year || publicEq?.financial_year);
-
-  return (
-    <div className="space-y-6">
-      {renderStructureSummary()}
-      {renderShareholdingPatternTable(promoterEq, promoterPref, `Promoters - ${fyLabel}`)}
-      {renderShareholdingPatternTable(publicEq, publicPref, `Public / Other Than Promoters - ${fyLabel}`)}
-    </div>
-  );
-};
-
-const renderDirectorShareholding = () => {
-  const order = [
-    "SANJIV GARG",
-    "PRITHAVI RAJ JINDAL",
-    "RITU SHARMA",
-    "AJAY BHATIA",
-    "ANUPMA KASHYAP",
-    "MANDAVI SHARMA",
-    "SUNIL KUMAR JAIN",
-    "SMINU JINDAL",
-  ];
-  const rows = arr(r.director_shareholdings)
-    .slice()
-    .sort((a, b) => {
-      const ia = order.indexOf(String(a?.full_name || "").toUpperCase());
-      const ib = order.indexOf(String(b?.full_name || "").toUpperCase());
-      if (ia === -1 && ib === -1) return String(a?.full_name || "").localeCompare(String(b?.full_name || ""));
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
-    });
-  if (!rows.length) return <Empty />;
-
-  return (
-    <Tbl headers={["Name", "Designation", "Shareholding (%)", "Number of Shares", "Cessation Date"]}>
-      {rows.map((row, i) => (
-        <tr key={i}>
-          <td className="px-4 py-2">{txt(row?.full_name)}</td>
-          <td className="px-4 py-2">{txt(row?.designation)}</td>
-          <td className="px-4 py-2">{row?.percentage_holding != null ? pct2(row.percentage_holding) : "—"}</td>
-          <td className="px-4 py-2">{row?.no_of_shares != null ? fmt(row.no_of_shares) : "—"}</td>
-          <td className="px-4 py-2">{row?.date_of_cessation ? formatDate(row.date_of_cessation) : "-"}</td>
+        <tr>
+          <td className="px-4 py-2">{pct2(promoterEq?.total_percentage_of_shares)}</td>
+          <td className="px-4 py-2">{pct2(publicEq?.total_percentage_of_shares)}</td>
+          <td className="px-4 py-2">
+            {summary.total != null ? `${summary.total} [Promoter(s) ${summary.promoter ?? summary.total}]` : "—"}
+          </td>
+          <td className="px-4 py-2">{summary.total_equity_shares != null ? fmt(summary.total_equity_shares) : "—"}</td>
+          <td className="px-4 py-2">{summary.total_preference_shares != null ? fmt(summary.total_preference_shares) : "—"}</td>
         </tr>
-      ))}
-    </Tbl>
-  );
-};
-
-const renderDirectors = () => {
-  const rows = arr(r.authorized_signatories).slice();
-  if (!rows.length) return <Empty />;
-  rows.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
-  return (
-    <Tbl headers={["Director Name", "Designation", "DIN", "P.D.A.D", "O.A.D", "Cessation Date", "Flags"]}>
-      {rows.map((row, i) => (
-        <tr key={i}>
-          <td className="px-4 py-2">{txt(row?.name)}</td>
-          <td className="px-4 py-2">{txt(row?.designation)}</td>
-          <td className="px-4 py-2 font-mono">{txt(row?.din)}</td>
-          <td className="px-4 py-2">{row?.date_of_appointment_for_current_designation ? formatDate(row.date_of_appointment_for_current_designation) : "-"}</td>
-          <td className="px-4 py-2">{row?.date_of_appointment ? formatDate(row.date_of_appointment) : "-"}</td>
-          <td className="px-4 py-2">{row?.date_of_cessation ? formatDate(row.date_of_cessation) : "-"}</td>
-          <td className="px-4 py-2">-</td>
-        </tr>
-      ))}
-    </Tbl>
-  );
-};
-
-const renderShareholdingMoreThan5 = () => {
-  const latest = arr(r.shareholdings_more_than_five_percent)
-    .slice()
-    .sort((a, b) => String(b?.financial_year || "").localeCompare(String(a?.financial_year || "")))[0];
-
-  if (!latest) return <Empty />;
-
-  const companyEntities = arr(r?.holding_entities?.company);
-  const dinLookup = new Map(
-    arr(r.authorized_signatories).map((x) => [String(x?.name || "").trim().toUpperCase(), x?.din || null])
-  );
-
-  const companyRows = arr(latest.company).map((x) => {
-    const match = companyEntities.find((c) => String(c?.legal_name || "").trim() === String(x?.name || "").trim());
-    return { ...x, match };
-  });
-
-  const renderCompanyTable = (rows) =>
-    rows.length ? (
-      <Tbl
-        headers={[
-          "Corporate Name",
-          "*SH (%)",
-          "City",
-          "*PUC (Rs. Cr.)",
-          "*SOC (Rs. Cr.)",
-          "*Date of Incorp.",
-          "Status",
-        ]}
-      >
-        {rows.map((row, i) => (
-          <tr key={i}>
-            <td className="px-4 py-2">
-              {txt(row?.name)}
-              {row?.match?.cin ? <div className="text-xs text-slate-500 font-mono">({row.match.cin})</div> : null}
-            </td>
-            <td className="px-4 py-2">{row?.shareholding_percentage != null ? pct2(row.shareholding_percentage) : "—"}</td>
-            <td className="px-4 py-2">{txt(row?.match?.city)}</td>
-            <td className="px-4 py-2">{row?.match?.paid_up_capital != null ? cr2(row.match.paid_up_capital) : "—"}</td>
-            <td className="px-4 py-2">{row?.match?.sum_of_charges != null ? cr2(row.match.sum_of_charges) : "—"}</td>
-            <td className="px-4 py-2">{row?.match?.incorporation_date ? formatDate(row.match.incorporation_date) : "—"}</td>
-            <td className="px-4 py-2">{txt(row?.match?.status)}</td>
-          </tr>
-        ))}
       </Tbl>
-    ) : null;
-
-  const renderPersonTable = (rows) =>
-    rows.length ? (
-      <Tbl headers={["Name", "Shareholding (%)", "Country", "Remarks"]}>
-        {rows.map((row, i) => {
-          const hasDin = !!dinLookup.get(String(row?.name || "").trim().toUpperCase());
-          return (
-            <tr key={i}>
-              <td className="px-4 py-2">{txt(row?.name)}</td>
-              <td className="px-4 py-2">{row?.shareholding_percentage != null ? pct2(row.shareholding_percentage) : "—"}</td>
-              <td className="px-4 py-2">-</td>
-              <td className="px-4 py-2">{hasDin ? "Person holding DIN" : "—"}</td>
-            </tr>
-          );
-        })}
-      </Tbl>
-    ) : null;
-
-  return (
-    <div className="space-y-5">
-      <p className="text-xs text-slate-500">See Annexure for Past Year(s) Share Holding Data</p>
-      <p className="text-xs text-slate-500">
-        *SH = Shareholding  *PUC = Paid Up Capital  *SOC = Sum of Charges  *Date of Incorp. = Date of Incorporation
-      </p>
-      {companyRows.length ? (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-slate-700">Company</h3>
-          {renderCompanyTable(companyRows)}
-        </div>
-      ) : null}
-      {arr(latest.individual).length ? (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-slate-700">Individuals</h3>
-          {renderPersonTable(arr(latest.individual))}
-        </div>
-      ) : null}
-    </div>
-  );
-};
-
-const renderRelatedCorporateGroup = (group) => {
-  const data = group || {};
-  const companyRows = arr(data.company);
-  const llpRows = arr(data.llp);
-  const otherRows = arr(data.others);
-
-  const inferCountry = (row) => {
-    const direct = row?.country || row?.country_name;
-    if (direct) return direct;
-    if (/LLC/i.test(String(row?.legal_name || row?.name || ""))) return "-";
-    return "-";
+    );
   };
 
-  const renderCompanyTable = (rows) =>
-    rows.length ? (
-      <Tbl
-        headers={[
-          "Corporate Name",
-          "*SH (%)",
-          "City",
-          "*PUC (Rs. Cr.)",
-          "*SOC (Rs. Cr.)",
-          "*Date of Incorp.",
-          "Status",
-        ]}
-      >
+  const renderShareholdingPatternTable = (equityRow, preferenceRow, title) => {
+    const categories = [
+      { label: "Individual / Hindu Undivided Family", group: true },
+      { label: "(i) Indian", field: "indian_held" },
+      { label: "(ii) Non-resident Indian (others)", field: "nri_held" },
+      { label: "(iii) Foreign national (other than NRI)", field: "foreign_held_other_than_nri" },
+      { label: "Government", group: true },
+      { label: "(i) Central Government", field: "central_government_held" },
+      { label: "(ii) State Government", field: "state_government_held" },
+      { label: "(iii) Government companies", field: "government_company_held" },
+      { label: "Insurance companies", field: "insurance_company_held" },
+      { label: "Banks", field: "bank_held" },
+      { label: "Financial institutions", field: "financial_institutions_held" },
+      { label: "Foreign institutional investors", field: "financial_institutions_investors_held" },
+      { label: "Mutual funds", field: "mutual_funds_held" },
+      { label: "Venture capital", field: "venture_capital_held" },
+      { label: "Body corporate (not mentioned above)", field: "body_corporate_held" },
+      { label: "Others", field: "others_held" },
+      { label: "Total", field: "total", bold: true },
+    ];
+
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        <Tbl
+          headers={[
+            "Category",
+            "Equity Number of Shares",
+            "Equity Percentage",
+            "Preference Number of Shares",
+            "Preference Percentage",
+          ]}
+        >
+          {categories.map((item, i) => {
+            if (item.group) {
+              return (
+                <tr key={`group-${i}`} className="bg-slate-50">
+                  <td className="px-4 py-2 font-semibold text-slate-700" colSpan={5}>
+                    {item.label}
+                  </td>
+                </tr>
+              );
+            }
+
+            const eqNo = equityRow?.[`${item.field}_no_of_shares`];
+            const eqPct = equityRow?.[`${item.field}_percentage_of_shares`];
+            const prNo = preferenceRow?.[`${item.field}_no_of_shares`];
+            const prPct = preferenceRow?.[`${item.field}_percentage_of_shares`];
+
+            return (
+              <tr key={`${item.field}-${i}`} className={item.bold ? "font-semibold" : ""}>
+                <td className="px-4 py-2 pl-6">{item.label}</td>
+                <td className="px-4 py-2">{eqNo != null ? fmt(eqNo) : "—"}</td>
+                <td className="px-4 py-2">{eqPct != null ? pct2(eqPct) : "—"}</td>
+                <td className="px-4 py-2">{prNo != null ? fmt(prNo) : "—"}</td>
+                <td className="px-4 py-2">{prPct != null ? pct2(prPct) : "—"}</td>
+              </tr>
+            );
+          })}
+        </Tbl>
+      </div>
+    );
+  };
+
+  const renderShareholdingPattern = () => {
+    const rows = arr(r.shareholdings);
+    const promoterEq = rows.find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "promoter" &&
+        String(s?.category || "").toLowerCase() === "equity"
+    );
+    const promoterPref = rows.find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "promoter" &&
+        String(s?.category || "").toLowerCase() === "preference"
+    );
+    const publicEq = rows.find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "public" &&
+        String(s?.category || "").toLowerCase() === "equity"
+    );
+    const publicPref = rows.find(
+      (s) =>
+        String(s?.shareholders || "").toLowerCase() === "public" &&
+        String(s?.category || "").toLowerCase() === "preference"
+    );
+
+    const fyLabel = fyEndLabel(arr(r.shareholdings_summary)[0]?.financial_year || promoterEq?.financial_year || publicEq?.financial_year);
+
+    return (
+      <div className="space-y-6">
+        {renderStructureSummary()}
+        {renderShareholdingPatternTable(promoterEq, promoterPref, `Promoters - ${fyLabel}`)}
+        {renderShareholdingPatternTable(publicEq, publicPref, `Public / Other Than Promoters - ${fyLabel}`)}
+      </div>
+    );
+  };
+
+  const renderDirectorShareholding = () => {
+    const order = [
+      "SANJIV GARG",
+      "PRITHAVI RAJ JINDAL",
+      "RITU SHARMA",
+      "AJAY BHATIA",
+      "ANUPMA KASHYAP",
+      "MANDAVI SHARMA",
+      "SUNIL KUMAR JAIN",
+      "SMINU JINDAL",
+    ];
+    const rows = arr(r.director_shareholdings)
+      .slice()
+      .sort((a, b) => {
+        const ia = order.indexOf(String(a?.full_name || "").toUpperCase());
+        const ib = order.indexOf(String(b?.full_name || "").toUpperCase());
+        if (ia === -1 && ib === -1) return String(a?.full_name || "").localeCompare(String(b?.full_name || ""));
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+    if (!rows.length) return <Empty />;
+
+    return (
+      <Tbl headers={["Name", "Designation", "Shareholding (%)", "Number of Shares", "Cessation Date"]}>
         {rows.map((row, i) => (
           <tr key={i}>
-            <td className="px-4 py-2">{txt(row?.legal_name)}</td>
-            <td className="px-4 py-2">{row?.share_holding_percentage != null ? pct2(row.share_holding_percentage) : "—"}</td>
-            <td className="px-4 py-2">{txt(row?.city)}</td>
-            <td className="px-4 py-2">{row?.paid_up_capital != null ? cr2(row.paid_up_capital) : "—"}</td>
-            <td className="px-4 py-2">{row?.sum_of_charges != null ? cr2(row.sum_of_charges) : "—"}</td>
-            <td className="px-4 py-2">{row?.incorporation_date ? formatDate(row.incorporation_date) : "—"}</td>
-            <td className="px-4 py-2">{txt(row?.status)}</td>
+            <td className="px-4 py-2">{txt(row?.full_name)}</td>
+            <td className="px-4 py-2">{txt(row?.designation)}</td>
+            <td className="px-4 py-2">{row?.percentage_holding != null ? pct2(row.percentage_holding) : "—"}</td>
+            <td className="px-4 py-2">{row?.no_of_shares != null ? fmt(row.no_of_shares) : "—"}</td>
+            <td className="px-4 py-2">{row?.date_of_cessation ? formatDate(row.date_of_cessation) : "-"}</td>
           </tr>
         ))}
       </Tbl>
-    ) : null;
+    );
+  };
 
-  const renderOtherTable = (rows) =>
-    rows.length ? (
-      <Tbl headers={["Corporate Name", "Shareholding (%)", "Country", "Remarks"]}>
+  const renderDirectors = () => {
+    const rows = arr(r.authorized_signatories).slice();
+    if (!rows.length) return <Empty />;
+    rows.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+    return (
+      <Tbl headers={["Director Name", "Designation", "DIN", "P.D.A.D", "O.A.D", "Cessation Date", "Flags"]}>
         {rows.map((row, i) => (
           <tr key={i}>
-            <td className="px-4 py-2">{txt(row?.legal_name || row?.name)}</td>
-            <td className="px-4 py-2">{row?.share_holding_percentage != null ? pct2(row.share_holding_percentage) : "—"}</td>
-            <td className="px-4 py-2">{inferCountry(row)}</td>
-            <td className="px-4 py-2">{row?.legal_name ? "A foreign entity" : "—"}</td>
+            <td className="px-4 py-2">{txt(row?.name)}</td>
+            <td className="px-4 py-2">{txt(row?.designation)}</td>
+            <td className="px-4 py-2 font-mono">{txt(row?.din)}</td>
+            <td className="px-4 py-2">{row?.date_of_appointment_for_current_designation ? formatDate(row.date_of_appointment_for_current_designation) : "-"}</td>
+            <td className="px-4 py-2">{row?.date_of_appointment ? formatDate(row.date_of_appointment) : "-"}</td>
+            <td className="px-4 py-2">{row?.date_of_cessation ? formatDate(row.date_of_cessation) : "-"}</td>
+            <td className="px-4 py-2">-</td>
           </tr>
         ))}
       </Tbl>
-    ) : null;
+    );
+  };
 
-  return (
-    <div className="space-y-5">
-      {renderCompanyTable(companyRows)}
-      {renderOtherTable(llpRows)}
-      {renderOtherTable(otherRows)}
-    </div>
-  );
-};
+  const renderShareholdingMoreThan5 = () => {
+    const latest = arr(r.shareholdings_more_than_five_percent)
+      .slice()
+      .sort((a, b) => String(b?.financial_year || "").localeCompare(String(a?.financial_year || "")))[0];
+
+    if (!latest) return <Empty />;
+
+    const companyEntities = arr(r?.holding_entities?.company);
+    const dinLookup = new Map(
+      arr(r.authorized_signatories).map((x) => [String(x?.name || "").trim().toUpperCase(), x?.din || null])
+    );
+
+    const companyRows = arr(latest.company).map((x) => {
+      const match = companyEntities.find((c) => String(c?.legal_name || "").trim() === String(x?.name || "").trim());
+      return { ...x, match };
+    });
+
+    const renderCompanyTable = (rows) =>
+      rows.length ? (
+        <Tbl
+          headers={[
+            "Corporate Name",
+            "*SH (%)",
+            "City",
+            "*PUC (Rs. Cr.)",
+            "*SOC (Rs. Cr.)",
+            "*Date of Incorp.",
+            "Status",
+          ]}
+        >
+          {rows.map((row, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2">
+                {txt(row?.name)}
+                {row?.match?.cin ? <div className="text-xs text-slate-500 font-mono">({row.match.cin})</div> : null}
+              </td>
+              <td className="px-4 py-2">{row?.shareholding_percentage != null ? pct2(row.shareholding_percentage) : "—"}</td>
+              <td className="px-4 py-2">{txt(row?.match?.city)}</td>
+              <td className="px-4 py-2">{row?.match?.paid_up_capital != null ? cr2(row.match.paid_up_capital) : "—"}</td>
+              <td className="px-4 py-2">{row?.match?.sum_of_charges != null ? cr2(row.match.sum_of_charges) : "—"}</td>
+              <td className="px-4 py-2">{row?.match?.incorporation_date ? formatDate(row.match.incorporation_date) : "—"}</td>
+              <td className="px-4 py-2">{txt(row?.match?.status)}</td>
+            </tr>
+          ))}
+        </Tbl>
+      ) : null;
+
+    const renderPersonTable = (rows) =>
+      rows.length ? (
+        <Tbl headers={["Name", "Shareholding (%)", "Country", "Remarks"]}>
+          {rows.map((row, i) => {
+            const hasDin = !!dinLookup.get(String(row?.name || "").trim().toUpperCase());
+            return (
+              <tr key={i}>
+                <td className="px-4 py-2">{txt(row?.name)}</td>
+                <td className="px-4 py-2">{row?.shareholding_percentage != null ? pct2(row.shareholding_percentage) : "—"}</td>
+                <td className="px-4 py-2">-</td>
+                <td className="px-4 py-2">{hasDin ? "Person holding DIN" : "—"}</td>
+              </tr>
+            );
+          })}
+        </Tbl>
+      ) : null;
+
+    return (
+      <div className="space-y-5">
+        <p className="text-xs text-slate-500">See Annexure for Past Year(s) Share Holding Data</p>
+        <p className="text-xs text-slate-500">
+          *SH = Shareholding  *PUC = Paid Up Capital  *SOC = Sum of Charges  *Date of Incorp. = Date of Incorporation
+        </p>
+        {companyRows.length ? (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-slate-700">Company</h3>
+            {renderCompanyTable(companyRows)}
+          </div>
+        ) : null}
+        {arr(latest.individual).length ? (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-slate-700">Individuals</h3>
+            {renderPersonTable(arr(latest.individual))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderRelatedCorporateGroup = (group) => {
+    const data = group || {};
+    const companyRows = arr(data.company);
+    const llpRows = arr(data.llp);
+    const otherRows = arr(data.others);
+
+    const inferCountry = (row) => {
+      const direct = row?.country || row?.country_name;
+      if (direct) return direct;
+      if (/LLC/i.test(String(row?.legal_name || row?.name || ""))) return "-";
+      return "-";
+    };
+
+    const renderCompanyTable = (rows) =>
+      rows.length ? (
+        <Tbl
+          headers={[
+            "Corporate Name",
+            "*SH (%)",
+            "City",
+            "*PUC (Rs. Cr.)",
+            "*SOC (Rs. Cr.)",
+            "*Date of Incorp.",
+            "Status",
+          ]}
+        >
+          {rows.map((row, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2">{txt(row?.legal_name)}</td>
+              <td className="px-4 py-2">{row?.share_holding_percentage != null ? pct2(row.share_holding_percentage) : "—"}</td>
+              <td className="px-4 py-2">{txt(row?.city)}</td>
+              <td className="px-4 py-2">{row?.paid_up_capital != null ? cr2(row.paid_up_capital) : "—"}</td>
+              <td className="px-4 py-2">{row?.sum_of_charges != null ? cr2(row.sum_of_charges) : "—"}</td>
+              <td className="px-4 py-2">{row?.incorporation_date ? formatDate(row.incorporation_date) : "—"}</td>
+              <td className="px-4 py-2">{txt(row?.status)}</td>
+            </tr>
+          ))}
+        </Tbl>
+      ) : null;
+
+    const renderOtherTable = (rows) =>
+      rows.length ? (
+        <Tbl headers={["Corporate Name", "Shareholding (%)", "Country", "Remarks"]}>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2">{txt(row?.legal_name || row?.name)}</td>
+              <td className="px-4 py-2">{row?.share_holding_percentage != null ? pct2(row.share_holding_percentage) : "—"}</td>
+              <td className="px-4 py-2">{inferCountry(row)}</td>
+              <td className="px-4 py-2">{row?.legal_name ? "A foreign entity" : "—"}</td>
+            </tr>
+          ))}
+        </Tbl>
+      ) : null;
+
+    return (
+      <div className="space-y-5">
+        {renderCompanyTable(companyRows)}
+        {renderOtherTable(llpRows)}
+        {renderOtherTable(otherRows)}
+      </div>
+    );
+  };
 
   const renderDirectorNetwork = () => {
     const rows = arr(r.director_network).flatMap((d) =>
@@ -1753,12 +1754,12 @@ const renderRelatedCorporateGroup = (group) => {
     if (!rows.length) return <Empty />;
     const baseRows = latestOnly
       ? (() => {
-          const latestDate = rows
-            .map((x) => x?.rating_date)
-            .filter(Boolean)
-            .sort((a, b) => String(b).localeCompare(String(a)))[0];
-          return rows.filter((x) => String(x?.rating_date || "") === String(latestDate || ""));
-        })()
+        const latestDate = rows
+          .map((x) => x?.rating_date)
+          .filter(Boolean)
+          .sort((a, b) => String(b).localeCompare(String(a)))[0];
+        return rows.filter((x) => String(x?.rating_date || "") === String(latestDate || ""));
+      })()
       : rows;
 
     const groups = baseRows.reduce((acc, row) => {
@@ -2328,11 +2329,10 @@ const renderRelatedCorporateGroup = (group) => {
             <Sec
               id="msme"
               icon={DollarSign}
-              title={`MSME Supplier Payment Delays${
-                r?.msme_supplier_payment_delays?.delays_for_period?.latest_period
-                  ? ` - ${r.msme_supplier_payment_delays.delays_for_period.latest_period}`
-                  : ""
-              }`}
+              title={`MSME Supplier Payment Delays${r?.msme_supplier_payment_delays?.delays_for_period?.latest_period
+                ? ` - ${r.msme_supplier_payment_delays.delays_for_period.latest_period}`
+                : ""
+                }`}
               refs={refs}
             />
             {renderMsme()}
@@ -2873,6 +2873,8 @@ function OpsOrderDetail() {
   const [localReport, setLocalReport] = useState(null);
   const [localDecision, setLocalDecision] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
+  const [versionData, setVersionData] = useState(null);
+  const [loadingVersion, setLoadingVersion] = useState(false);
 
   useEffect(() => {
     if (order?.analystEnrichment) {
@@ -2886,28 +2888,44 @@ function OpsOrderDetail() {
       }
     }
 
-    // Try multiple fallback paths for report data
-    if (order?.latestSnapshot?.report) {
-      setLocalReport(order.latestSnapshot.report);
-    } else if (order?.providerSearchSnapshot?.data) {
-      setLocalReport(order.providerSearchSnapshot.data);
-    } else if (order?.latest?.report) {
-      setLocalReport(order.latest.report);
-    } else if (order?.latest?.data) {
-      setLocalReport(order.latest.data);
+    // Auto-select latest version and fetch its data via version endpoint
+    // This single endpoint returns all the data we need
+    if (order?.versions?.length) {
+      const latest = order.versions.reduce((max, v) =>
+        v.version > max.version ? v : max,
+        order.versions[0]
+      );
+      setSelectedVersion(latest.version);
+      // Fetch the latest version data - this is the only API call needed
+      fetchVersionData(latest.version);
     }
-
-    if (Array.isArray(order?.versions) && order.versions.length > 0) {
-      setSelectedVersion(order.versions[0].version);
-    } else {
-      setSelectedVersion(null);
-    }
-  }, [order]);
+  }, [order?.versions]);
 
   const notify = (t, m) => {
     setToast({ t, m });
     setTimeout(() => setToast(null), 3500);
   };
+
+  const fetchVersionData = async (version) => {
+    if (!version || !id) {
+      setVersionData(null);
+      return;
+    }
+    setLoadingVersion(true);
+    try {
+      const response = await api.get(`/api/operations/orders/${id}/versions/${version}`);
+      if (response.data) {
+        setVersionData(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch version data', err);
+      notify('err', 'Failed to load version data');
+      setVersionData(null);
+    } finally {
+      setLoadingVersion(false);
+    }
+  };
+
   const inv = () => qc.invalidateQueries({ queryKey: ["opsOrder", id] });
 
   if (!id || isNaN(id))
@@ -2930,30 +2948,14 @@ function OpsOrderDetail() {
       </div>
     );
 
-  const snapshot = order?.providerSearchSnapshot || null;
   const versions = Array.isArray(order?.versions) ? order.versions : [];
-  const selectedVersionData = versions.find((v) => String(v.version) === String(selectedVersion));
-
-  // Enhanced data availability check
-  const hasSnapshotData = !!(snapshot?.data || order?.latestSnapshot?.data || order?.latest?.data);
-  const hasData = !!(hasSnapshotData || localReport);
-  
+  const hasData = !!(versionData?.snapshotData?.data || order?.snapshotData?.data);
   const hasModels = !!(localDecision || order.analystEnrichment?.decisionOutputs);
   const hasPdf = order.generatedDocuments?.some((d) => d.documentType === "due_diligence_report" && d.status === "ready");
   const done = order.status === "completed";
 
-  // Enhanced report extraction with all fallback paths
-  const report =
-    selectedVersionData?.report ||
-    localReport ||
-    order?.latestSnapshot?.report ||
-    snapshot?.data ||
-    order?.latestSnapshot?.data ||
-    order?.latest?.data ||
-    order?.latest?.report ||
-    null;
-
-
+  // Report data: selected version takes precedence
+  const report = versionData?.snapshotData?.data || order?.snapshotData?.data || null;
   const decision = localDecision || order.analystEnrichment?.decisionOutputs;
 
   const doFetch = () => {
@@ -2970,9 +2972,10 @@ function OpsOrderDetail() {
             null
           );
           if (Array.isArray(d?.versions) && d.versions.length > 0) {
-            setSelectedVersion(d.versions[0].version);
+            const latest = d.versions.reduce((max, v) => v.version > max.version ? v : max, d.versions[0]);
+            setSelectedVersion(latest.version);
+            fetchVersionData(latest.version);
           }
-
           inv();
           notify("ok", "Latest version fetched successfully");
         },
@@ -3107,29 +3110,35 @@ function OpsOrderDetail() {
       {/* ── Company Data Tab ── */}
       {tab === "data" && (
         <div className="space-y-5">
-          <div className="flex justify-end gap-2">
-            {versions.length > 0 && (
-              <select
-                value={selectedVersion ?? ""}
-                onChange={(e) => {
-                  const nextVersion = Number(e.target.value);
-                  setSelectedVersion(nextVersion);
-                  const next = versions.find((v) => v.version === nextVersion);
-                  if (next?.report) setLocalReport(next.report);
-                }}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
-              >
-                {versions.map((v) => (
-                  <option key={v.id || v.version} value={v.version}>
-                    Version {v.version} ({formatDate(v.fetchedAt)})
-                  </option>
-                ))}
-              </select>
+          <div className="flex justify-end gap-2 items-center">
+            <Label>Data Version:</Label>
+            <select
+              value={selectedVersion || ''}
+              onChange={(e) => {
+                const v = e.target.value ? parseInt(e.target.value) : null;
+                setSelectedVersion(v);
+                fetchVersionData(v);
+              }}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
+              disabled={loadingVersion}
+            >
+              {versions.map((v) => (
+                <option key={v.version} value={v.version}>
+                  Version {v.version} – {formatDate(v.fetchedAt)} ({v.fetchedBy})
+                </option>
+              ))}
+            </select>
+            {loadingVersion && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+            {versionData?.fetchedAt && !loadingVersion && (
+              <span className="text-xs text-slate-500">
+                Fetched: {versionData.fetchedAt.slice(0, 16).replace('T', ' ')}
+              </span>
             )}
             <Button variant="outline" size="sm" onClick={doFetch} isLoading={fetchMut.isPending}>
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Re-fetch
             </Button>
           </div>
+
           {!hasData ? (
             <Card className="p-12 text-center">
               <Building2 className="w-14 h-14 text-slate-300 mx-auto mb-4" />
@@ -3149,8 +3158,6 @@ function OpsOrderDetail() {
           )}
         </div>
       )}
-
-
 
       {/* ── Analyst Notes Tab ── */}
       {tab === "notes" && (

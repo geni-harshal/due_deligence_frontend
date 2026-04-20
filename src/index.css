@@ -66,6 +66,39 @@ body {
   --radius: 0.75rem;
 }
 
+@layer base {
+  :root {
+    --color-primary: #002147;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #d4e3ff;
+    --color-on-primary-container: #001b3f;
+    --color-secondary: #006a6a;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #9cf1f0;
+    --color-on-secondary-container: #002020;
+    --color-tertiary: #006874;
+    --color-on-tertiary: #ffffff;
+    --color-error: #ba1a1a;
+    --color-on-error: #ffffff;
+    --color-surface: #f8f9fc;
+    --color-on-surface: #1a1c1e;
+    --color-on-surface-variant: #43474e;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f1f3f7;
+    --color-surface-container: #e8eaf0;
+    --color-surface-container-high: #dde0e8;
+    --color-surface-container-highest: #d0d3dc;
+    --color-surface-bright: #fafafa;
+    --color-outline: #73777f;
+    --color-outline-variant: #c3c6cf;
+    --color-background: #eef0f8;
+    --color-on-background: #1a1c1e;
+    --font-headline: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-label: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+}
+
 /* @layer base {
   * {
     @apply border-border;
