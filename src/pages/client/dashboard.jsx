@@ -142,7 +142,7 @@ function ClientDashboard() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link href={`~/client/report/${order.id}`}>
+                  <Link href={`~/report/${order.id}`}>
                     <Button size="sm" variant="outline" title="View Credit Report">
                       <Eye className="w-3.5 h-3.5 mr-1" /> View
                     </Button>
@@ -224,7 +224,7 @@ function ClientDashboard() {
                         {formatDate(order.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link href={`~/client/report/${order.id}`}>
+                        <Link href={`~/report/${order.id}`}>
                           <Button size="sm" variant="ghost" title="View Credit Report">
                             <Eye className="w-3.5 h-3.5" />
                           </Button>

@@ -181,7 +181,7 @@ function ClientOrders() {
                       </td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link href={`~/client/report/${order.id}`}>
+                          <Link href={`~/report/${order.id}`}>
                             <Button size="sm" variant="ghost" title="View Credit Report">
                               <Eye className="w-3.5 h-3.5" />
                             </Button>

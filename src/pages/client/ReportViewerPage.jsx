@@ -1,11 +1,13 @@
 // src/pages/client/ReportViewerPage.jsx
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useGetCreditReport } from "@/lib/api";
 import ReportViewer from "@/components/report-viewer/ReportViewer";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui-shared";
 
 export default function ReportViewerPage() {
   const { orderId } = useParams();
+  const [, navigate] = useLocation();
   const { data, isLoading, error } = useGetCreditReport(orderId);
 
   if (isLoading) {
@@ -33,5 +35,25 @@ export default function ReportViewerPage() {
   // Extract the inner report object
   const actualReport = data.reportData.report || data.reportData;
 
-  return <ReportViewer data={actualReport} />;
+  const handleBack = () => {
+    navigate("/client/orders");
+  };
+
+  return (
+    <div>
+      {/* Back Button - Hidden when printing */}
+      <div className="print-hide" style={{ position: "fixed", left: "24px", top: "24px", zIndex: 9999 }}>
+        <Button
+          onClick={handleBack}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+      </div>
+      <ReportViewer data={actualReport} />
+    </div>
+  );
 }

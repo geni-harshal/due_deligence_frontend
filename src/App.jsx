@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function ProtectedRoute({ children, allowedRoles, rolePath }) {
+function ProtectedRoute({ children, allowedRoles, rolePath, isFullScreen }) {
   const { data: user, isLoading } = useGetCurrentUser();
 
   if (isLoading) {
@@ -39,6 +39,11 @@ function ProtectedRoute({ children, allowedRoles, rolePath }) {
   );
 
   if (!hasAccess) return <Redirect to="/" replace />;
+
+  // For full-screen routes, render children without the AppLayout
+  if (isFullScreen) {
+    return children;
+  }
 
   return <AppLayout role={rolePath}>{children}</AppLayout>;
 }
@@ -87,12 +92,12 @@ function AppContent() {
       <Route path="/comprehensive-requests" element={<ComprehensiveRequests />} />
       <Route path="/operations-requests" element={<OperationsRequests />} />
 
-      {/* Credit Report Viewer Route – must be before "/" */}
-      {/* <Route path="/client/report/:orderId">
-        <ProtectedRoute allowedRoles={["client_"]} rolePath="client">
+      {/* Full-Screen Report Viewer Route – No Layout (No Navbar/Sidebar) */}
+      <Route path="/report/:orderId">
+        <ProtectedRoute allowedRoles={["client_"]} rolePath="client" isFullScreen={true}>
           <ClientReportViewer />
         </ProtectedRoute>
-      </Route> */}
+      </Route>
 
       <Route path="/" component={IndexRoute} />
       <Route>
