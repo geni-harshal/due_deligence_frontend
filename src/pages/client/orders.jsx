@@ -142,7 +142,10 @@ function ClientOrders() {
                   const location = [details?.city, details?.state]
                     .filter(Boolean)
                     .join(", ");
-                  const isCompleted = order.status === "completed";
+                  const isPdfReady =
+                    order.status === "completed" ||
+                    order.status === "pdf_generated" ||
+                    order.pdfStatus === "ready";
                   return (
                     <tr
                       key={order.id}
@@ -186,7 +189,7 @@ function ClientOrders() {
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
                           </Link>
-                          {isCompleted && (
+                          {isPdfReady && (
                             <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
                           )}
                         </div>

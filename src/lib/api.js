@@ -321,7 +321,7 @@ export const useGetCreditReport = (orderId) =>
   useQuery({
     queryKey: ["creditReport", orderId],
     queryFn: () =>
-      api.get(`/api/operations/orders/${orderId}/credit-report`).then((r) => r.data),
+      api.get(`/api/client/orders/${orderId}/credit-report`).then((r) => r.data),
     enabled: !!orderId,
   });
   

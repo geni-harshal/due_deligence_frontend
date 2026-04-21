@@ -28,12 +28,12 @@ import NewOrderModal from "./new-order-modal";
 
 function DownloadButton({ orderId, orderNumber }) {
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("auth_token"); // or "token" if you switched to JWT
+  const token = localStorage.getItem("token");
 
   async function handleDownload() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/client/orders/${orderId}/download-pdf`, {
+      const res = await fetch(`http://localhost:8080/api/client/orders/${orderId}/download-pdf`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) return;
@@ -62,7 +62,8 @@ function ClientDashboard() {
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
 
   const recentOrders = orders?.slice(0, 5) ?? [];
-  const completedOrders = orders?.filter((o) => o.status === "completed") ?? [];
+  const completedOrders =
+    orders?.filter((o) => o.status === "completed" || o.pdfStatus === "ready" || o.status === "pdf_generated") ?? [];
 
   return (
     <div>
