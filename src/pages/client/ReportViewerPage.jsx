@@ -1,59 +1,387 @@
+// // src/pages/client/ReportViewerPage.jsx
+// import { useEffect, useState } from "react";
+// import { useParams, useLocation } from "wouter";
+// import { Loader2, ArrowLeft, Download } from "lucide-react";
+// import { Button } from "@/components/ui-shared";
+
+// const PDF_VIEWER_FRAGMENT = "#toolbar=0&navpanes=0&scrollbar=0&view=FitH";
+
+// export default function ReportViewerPage() {
+//   const { orderId } = useParams();
+//   const [, navigate] = useLocation();
+
+//   const [previewUrl, setPreviewUrl] = useState(null);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [isDownloading, setIsDownloading] = useState(false);
+
+//   useEffect(() => {
+//     let objectUrl = null;
+//     let isMounted = true;
+
+//     async function loadPreview() {
+//       setIsLoading(true);
+//       setError(null);
+
+//       try {
+//         const token = localStorage.getItem("token");
+//         const response = await fetch(
+//           `http://localhost:8080/api/client/orders/${orderId}/pdf/preview`,
+//           {
+//             headers: token ? { Authorization: `Bearer ${token}` } : {},
+//           }
+//         );
+
+//         if (!response.ok) {
+//           throw new Error("PDF preview not ready");
+//         }
+
+//         const blob = await response.blob();
+//         objectUrl = URL.createObjectURL(blob);
+
+//         if (isMounted) {
+//           setPreviewUrl(objectUrl);
+//         }
+//       } catch (e) {
+//         if (isMounted) {
+//           setError(e);
+//           setPreviewUrl(null);
+//         }
+//       } finally {
+//         if (isMounted) {
+//           setIsLoading(false);
+//         }
+//       }
+//     }
+
+//     loadPreview();
+
+//     return () => {
+//       isMounted = false;
+//       if (objectUrl) URL.revokeObjectURL(objectUrl);
+//     };
+//   }, [orderId]);
+
+//   const handleBack = () => {
+//     navigate("/client/orders");
+//   };
+
+//   const handleDownload = async () => {
+//     setIsDownloading(true);
+//     try {
+//       const token = localStorage.getItem("token");
+//       const response = await fetch(
+//         `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
+//         {
+//           headers: token ? { Authorization: `Bearer ${token}` } : {},
+//         }
+//       );
+
+//       if (!response.ok) throw new Error("Download failed");
+
+//       const blob = await response.blob();
+//       const url = URL.createObjectURL(blob);
+//       const a = document.createElement("a");
+//       a.href = url;
+//       a.download = `DDR-${orderId}.pdf`;
+//       document.body.appendChild(a);
+//       a.click();
+//       document.body.removeChild(a);
+//       URL.revokeObjectURL(url);
+//     } finally {
+//       setIsDownloading(false);
+//     }
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <div className="min-h-screen bg-white flex items-center justify-center">
+//         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+//       </div>
+//     );
+//   }
+
+//   if (error || !previewUrl) {
+//     return (
+//       <div className="min-h-screen bg-white flex items-center justify-center text-amber-600 p-6">
+//         <div className="text-center">
+//           <p className="text-lg font-medium">PDF Not Ready</p>
+//           <p className="text-sm mt-2 text-gray-500">
+//             The report PDF is still being generated. Please check back later.
+//           </p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   const previewSrc = `${previewUrl}${PDF_VIEWER_FRAGMENT}`;
+
+//   return (
+//     <div className="min-h-screen bg-white">
+//       <div className="print-hide sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+//         <Button onClick={handleBack} variant="outline" size="sm" className="gap-2">
+//           <ArrowLeft className="w-4 h-4" />
+//           Back
+//         </Button>
+
+//         <Button
+//           onClick={handleDownload}
+//           size="sm"
+//           className="gap-2"
+//           disabled={isDownloading}
+//         >
+//           {isDownloading ? (
+//             <Loader2 className="w-4 h-4 animate-spin" />
+//           ) : (
+//             <Download className="w-4 h-4" />
+//           )}
+//           Download PDF
+//         </Button>
+//       </div>
+
+//       <div className="h-[calc(100vh-57px)] bg-white">
+//         <iframe
+//           title={`PDF Preview ${orderId}`}
+//           src={previewSrc}
+//           className="block h-full w-full border-0 bg-white"
+//           style={{
+//             border: "none",
+//             outline: "none",
+//             boxShadow: "none",
+//             margin: 0,
+//             display: "block",
+//             backgroundColor: "white !importanty",
+//           }}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
+
 // src/pages/client/ReportViewerPage.jsx
+import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useGetCreditReport } from "@/lib/api";
-import ReportViewer from "@/components/report-viewer/ReportViewer";
-import { Loader2, ArrowLeft } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker?url";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui-shared";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// High-resolution scale factor: at least 2.0 or device pixel ratio, whichever is larger
+const getHighResScale = () => Math.max(2.0, window.devicePixelRatio || 1);
 
 export default function ReportViewerPage() {
   const { orderId } = useParams();
   const [, navigate] = useLocation();
-  const { data, isLoading, error } = useGetCreditReport(orderId);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  const containerRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [waitingForPdf, setWaitingForPdf] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
-  if (error || !data?.reportData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-amber-600">
-        <div className="text-center">
-          <p className="text-lg font-medium">Report Not Ready</p>
-          <p className="text-sm mt-2 text-gray-500">
-            The credit report is still being generated. Please check back later.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    let retryTimer = null;
+    let removeScrollListener = null;
 
-  // The API returns { reportData: { report: {...} } }
-  // Extract the inner report object
-  const actualReport = data.reportData.report || data.reportData;
+    async function loadPDF() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `http://localhost:8080/api/client/orders/${orderId}/pdf/preview`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: controller.signal,
+          }
+        );
 
-  const handleBack = () => {
-    navigate("/client/orders");
+        if (!res.ok) {
+          setWaitingForPdf(true);
+          retryTimer = setTimeout(() => {
+            if (mounted) loadPDF();
+          }, 4000);
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const pdf = await pdfjsLib.getDocument(url).promise;
+
+        setWaitingForPdf(false);
+        setTotalPages(pdf.numPages);
+        const container = containerRef.current;
+        container.innerHTML = "";
+
+        const scale = getHighResScale();
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale });
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Set canvas buffer size to high‑resolution dimensions
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          // Render the page
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          // Style canvas for sharp downscaling
+          canvas.style.display = "block";
+          canvas.style.width = "100%";
+          canvas.style.height = "auto";
+          canvas.style.borderRadius = "8px";
+          canvas.style.imageRendering = "crisp-edges"; // optional, helps with text
+
+          const wrapper = document.createElement("div");
+          wrapper.style.background = "#ffffff";
+          wrapper.style.padding = "0";
+          wrapper.style.margin = "0 auto 32px auto";
+          wrapper.style.width = "100%";
+          wrapper.style.maxWidth = "900px"; // optional, keeps pages readable on wide screens
+          wrapper.style.borderRadius = "8px";
+          wrapper.style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)";
+
+          wrapper.appendChild(canvas);
+          container.appendChild(wrapper);
+        }
+
+        URL.revokeObjectURL(url);
+
+        // Scroll listener for page indicator
+        const handleScroll = () => {
+          const wrappers = containerRef.current?.children;
+          if (!wrappers) return;
+
+          let closest = 0;
+          let minDiff = Infinity;
+
+          for (let i = 0; i < wrappers.length; i++) {
+            const rect = wrappers[i].getBoundingClientRect();
+            const diff = Math.abs(rect.top);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closest = i;
+            }
+          }
+
+          setCurrentPage(closest + 1);
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        removeScrollListener = () => window.removeEventListener("scroll", handleScroll);
+        if (mounted) setLoading(false);
+      } catch (err) {
+        if (err.name !== "AbortError" && mounted) {
+          console.error(err);
+          setWaitingForPdf(true);
+          retryTimer = setTimeout(() => {
+            if (mounted) loadPDF();
+          }, 4000);
+        }
+      }
+    }
+
+    loadPDF();
+
+    return () => {
+      mounted = false;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (removeScrollListener) removeScrollListener();
+      controller.abort();
+    };
+  }, [orderId]);
+
+  const handleBack = () => navigate("/client/orders");
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Report-${orderId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
-    <div>
-      {/* Back Button - Hidden when printing */}
-      <div className="print-hide" style={{ position: "fixed", left: "24px", top: "24px", zIndex: 9999 }}>
-        <Button
-          onClick={handleBack}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
+    <div style={{ background: "#f3f4f6", minHeight: "100vh" }}>
+      {/* Sticky Header */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          background: "#ffffff",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "12px 20px",
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <div>
+          <Button onClick={handleBack} size="sm" variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
+
+        <div style={{ textAlign: "center", fontWeight: 500 }}>
+          {currentPage} / {totalPages}
+        </div>
+
+        <div style={{ textAlign: "right" }}>
+          <Button onClick={handleDownload} size="sm" disabled={downloading}>
+            {downloading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Download
+          </Button>
+        </div>
       </div>
-      <ReportViewer data={actualReport} />
+
+      {loading && (
+        <div
+          style={{
+            height: "calc(100vh - 60px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+          {waitingForPdf && (
+            <div style={{ fontSize: "14px", color: "#64748b" }}>
+              PDF is being generated... auto-refreshing
+            </div>
+          )}
+        </div>
+      )}
+
+      <div ref={containerRef} style={{ padding: "32px 0" }} />
     </div>
   );
 }

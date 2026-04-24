@@ -28,12 +28,12 @@ import NewOrderModal from "./new-order-modal";
 
 function DownloadButton({ orderId, orderNumber }) {
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("auth_token"); // or "token" if you switched to JWT
+  const token = localStorage.getItem("token");
 
   async function handleDownload() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/client/orders/${orderId}/download-pdf`, {
+      const res = await fetch(`http://localhost:8080/api/client/orders/${orderId}/pdf/download`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) return;
@@ -143,8 +143,8 @@ function ClientDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link href={`~/report/${order.id}`}>
-                    <Button size="sm" variant="outline" title="View Credit Report">
-                      <Eye className="w-3.5 h-3.5 mr-1" /> View
+                    <Button size="sm" variant="outline" title="View Report">
+                      <Eye className="w-3.5 h-3.5 mr-1" /> View Report
                     </Button>
                   </Link>
                   <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
@@ -201,7 +201,9 @@ function ClientDashboard() {
                     </td>
                   </tr>
                 ) : (
-                  recentOrders.map((order) => (
+                  recentOrders.map((order) => {
+                    const isCompleted = order.status === "completed";
+                    return (
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 font-mono font-semibold text-blue-600 text-xs">
                         {order.orderNumber}
@@ -224,14 +226,27 @@ function ClientDashboard() {
                         {formatDate(order.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link href={`~/report/${order.id}`}>
-                          <Button size="sm" variant="ghost" title="View Credit Report">
-                            <Eye className="w-3.5 h-3.5" />
+                        {isCompleted ? (
+                          <Link href={`~/report/${order.id}`}>
+                            <Button size="sm" variant="ghost" title="View Report">
+                              <Eye className="w-3.5 h-3.5 mr-1" />
+                              View Report
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Report not ready yet"
+                            disabled
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View Report
                           </Button>
-                        </Link>
+                        )}
                       </td>
                     </tr>
-                  ))
+                  )})
                 )}
               </tbody>
             )}

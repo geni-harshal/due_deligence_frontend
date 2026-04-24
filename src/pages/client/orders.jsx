@@ -32,7 +32,7 @@ function DownloadButton({ orderId, orderNumber }) {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8080/api/client/orders/${orderId}/download-pdf`,
+        `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -181,11 +181,24 @@ function ClientOrders() {
                       </td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link href={`~/report/${order.id}`}>
-                            <Button size="sm" variant="ghost" title="View Credit Report">
-                              <Eye className="w-3.5 h-3.5" />
+                          {isCompleted ? (
+                            <Link href={`~/report/${order.id}`}>
+                              <Button size="sm" variant="ghost" title="View Report">
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View Report
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Report not ready yet"
+                              disabled
+                            >
+                              <Eye className="w-3.5 h-3.5 mr-1" />
+                              View Report
                             </Button>
-                          </Link>
+                          )}
                           {isCompleted && (
                             <DownloadButton orderId={order.id} orderNumber={order.orderNumber} />
                           )}

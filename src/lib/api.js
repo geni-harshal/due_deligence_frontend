@@ -130,6 +130,8 @@ export const useGetClientStats = () =>
   useQuery({
     queryKey: ["clientStats"],
     queryFn: () => api.get("/api/client/stats").then((r) => r.data),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
 // ==================== CLIENT: ORDERS ====================
@@ -137,6 +139,14 @@ export const useListClientOrders = () =>
   useQuery({
     queryKey: ["clientOrders"],
     queryFn: () => api.get("/api/client/orders").then((r) => r.data),
+    refetchInterval: (query) => {
+      const orders = query?.state?.data || [];
+      if (!Array.isArray(orders) || orders.length === 0) return 5000;
+      const terminal = new Set(["completed", "cancelled", "failed", "credit_report_generation_failed", "pdf_generation_failed"]);
+      const hasInFlight = orders.some((o) => !terminal.has((o?.status || "").toLowerCase()));
+      return hasInFlight ? 3000 : 10000;
+    },
+    refetchOnWindowFocus: true,
   });
 
 // new-order-modal calls: createMut.mutate({ data: { productId, selectedCompany, notes } })
