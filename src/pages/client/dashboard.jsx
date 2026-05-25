@@ -29,11 +29,12 @@ import NewOrderModal from "./new-order-modal";
 function DownloadButton({ orderId, orderNumber }) {
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
+  const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
   async function handleDownload() {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/client/orders/${orderId}/pdf/download`, {
+      const res = await fetch(`${apiBase}/api/client/orders/${orderId}/pdf/download`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) return;
@@ -257,10 +258,10 @@ function ClientDashboard() {
       <div className="mt-6 bg-blue-600 rounded-2xl p-8 text-white shadow-xl shadow-blue-600/20 relative overflow-hidden">
         <div className="relative z-10 max-w-xl">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-5 h-5 text-blue-200" />
-            <span className="text-blue-200 text-sm font-medium">48-hour standard turnaround</span>
+            {/* <span className="text-blue-200 text-sm font-medium">48-hour standard turnaround</span> */}
           </div>
           <h2 className="text-xl font-bold mb-2">Need a new investigation?</h2>
+            {/* <TrendingUp className="w-5 h-5 text-blue-200" /> */}
           <p className="text-blue-100 mb-5 text-sm">
             Our operations team delivers comprehensive due diligence reports including company profile,
             directors, financials, charges, and a credit assessment.

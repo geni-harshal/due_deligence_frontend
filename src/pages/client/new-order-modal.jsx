@@ -118,7 +118,7 @@ function NewOrderModal({ isOpen, onClose }) {
               <FileText className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="font-semibold text-slate-900 text-base">New Due Diligence Report</h2>
+              <h2 className="font-semibold text-slate-900 text-base">New Report Request</h2>
               {step !== "success" && (
                 <p className="text-xs text-slate-400 mt-0.5">
                   {step === "search"
@@ -321,10 +321,11 @@ function NewOrderModal({ isOpen, onClose }) {
                   <p className="text-sm font-semibold text-blue-700">Due Diligence Report</p>
                 </div>
                 <p className="text-xs text-blue-600">
-                  Standard 48-hour turnaround &middot; Your report will be available in My Orders once completed.
+                  Your report will be available in My Orders once completed.
                 </p>
               </div>
 
+              {/* Additional Notes section commented out
               <FormField label="Additional Notes (optional)" hint="Any specific instructions for the analyst">
                 <textarea
                   value={notes}
@@ -334,6 +335,7 @@ function NewOrderModal({ isOpen, onClose }) {
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </FormField>
+              */}
 
               {error && <ErrorAlert message={error} />}
             </div>
@@ -342,37 +344,13 @@ function NewOrderModal({ isOpen, onClose }) {
           {/* ======= Success ======= */}
           {step === "success" && createdOrder && (
             <div className="flex flex-col items-center text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-5">
-                <CheckCircle2 className="w-9 h-9 text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                {autoFetchStatus === "failed" ? "Order Placed Successfully!" : "Order Processed Successfully!"}
-              </h3>
-              <p className="text-slate-600 max-w-sm text-sm leading-relaxed mb-4">
-                {autoFetchStatus === "failed"
-                  ? "Your order has been placed, but automatic data fetch did not complete."
-                  : "Your order is processed and data is fetched successfully."}
-              </p>
-              {autoFetchMessage && (
-                <div
-                  className={`mb-4 max-w-lg rounded-xl px-4 py-3 text-sm border ${
-                    autoFetchStatus === "failed"
-                      ? "bg-amber-50 border-amber-200 text-amber-700"
-                      : "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  }`}
-                >
-                  {autoFetchMessage}
-                </div>
-              )}
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Order Processed Successfully!</h3>
+              <p className="text-slate-600 max-w-sm text-sm leading-relaxed mb-6">Your order is processed and data is fetched successfully.</p>
               <div className="bg-slate-50 border border-slate-200 rounded-xl px-6 py-3 mb-6 inline-flex items-center gap-2">
                 <span className="text-xs text-slate-500">Order Number</span>
                 <span className="font-mono font-bold text-blue-700 text-sm">{createdOrder.orderNumber}</span>
               </div>
-              <p className="text-xs text-slate-400">
-                {autoFetchStatus === "failed"
-                  ? "Track your order in My Orders. Operations can re-fetch data."
-                  : "Track your order in My Orders."}
-              </p>
+              <p className="text-xs text-slate-400">Track your order in My Orders.</p>
             </div>
           )}
         </div>

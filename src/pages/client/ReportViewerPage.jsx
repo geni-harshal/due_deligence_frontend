@@ -1,163 +1,3 @@
-// // src/pages/client/ReportViewerPage.jsx
-// import { useEffect, useState } from "react";
-// import { useParams, useLocation } from "wouter";
-// import { Loader2, ArrowLeft, Download } from "lucide-react";
-// import { Button } from "@/components/ui-shared";
-
-// const PDF_VIEWER_FRAGMENT = "#toolbar=0&navpanes=0&scrollbar=0&view=FitH";
-
-// export default function ReportViewerPage() {
-//   const { orderId } = useParams();
-//   const [, navigate] = useLocation();
-
-//   const [previewUrl, setPreviewUrl] = useState(null);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [isDownloading, setIsDownloading] = useState(false);
-
-//   useEffect(() => {
-//     let objectUrl = null;
-//     let isMounted = true;
-
-//     async function loadPreview() {
-//       setIsLoading(true);
-//       setError(null);
-
-//       try {
-//         const token = localStorage.getItem("token");
-//         const response = await fetch(
-//           `http://localhost:8080/api/client/orders/${orderId}/pdf/preview`,
-//           {
-//             headers: token ? { Authorization: `Bearer ${token}` } : {},
-//           }
-//         );
-
-//         if (!response.ok) {
-//           throw new Error("PDF preview not ready");
-//         }
-
-//         const blob = await response.blob();
-//         objectUrl = URL.createObjectURL(blob);
-
-//         if (isMounted) {
-//           setPreviewUrl(objectUrl);
-//         }
-//       } catch (e) {
-//         if (isMounted) {
-//           setError(e);
-//           setPreviewUrl(null);
-//         }
-//       } finally {
-//         if (isMounted) {
-//           setIsLoading(false);
-//         }
-//       }
-//     }
-
-//     loadPreview();
-
-//     return () => {
-//       isMounted = false;
-//       if (objectUrl) URL.revokeObjectURL(objectUrl);
-//     };
-//   }, [orderId]);
-
-//   const handleBack = () => {
-//     navigate("/client/orders");
-//   };
-
-//   const handleDownload = async () => {
-//     setIsDownloading(true);
-//     try {
-//       const token = localStorage.getItem("token");
-//       const response = await fetch(
-//         `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
-//         {
-//           headers: token ? { Authorization: `Bearer ${token}` } : {},
-//         }
-//       );
-
-//       if (!response.ok) throw new Error("Download failed");
-
-//       const blob = await response.blob();
-//       const url = URL.createObjectURL(blob);
-//       const a = document.createElement("a");
-//       a.href = url;
-//       a.download = `DDR-${orderId}.pdf`;
-//       document.body.appendChild(a);
-//       a.click();
-//       document.body.removeChild(a);
-//       URL.revokeObjectURL(url);
-//     } finally {
-//       setIsDownloading(false);
-//     }
-//   };
-
-//   if (isLoading) {
-//     return (
-//       <div className="min-h-screen bg-white flex items-center justify-center">
-//         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-//       </div>
-//     );
-//   }
-
-//   if (error || !previewUrl) {
-//     return (
-//       <div className="min-h-screen bg-white flex items-center justify-center text-amber-600 p-6">
-//         <div className="text-center">
-//           <p className="text-lg font-medium">PDF Not Ready</p>
-//           <p className="text-sm mt-2 text-gray-500">
-//             The report PDF is still being generated. Please check back later.
-//           </p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   const previewSrc = `${previewUrl}${PDF_VIEWER_FRAGMENT}`;
-
-//   return (
-//     <div className="min-h-screen bg-white">
-//       <div className="print-hide sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
-//         <Button onClick={handleBack} variant="outline" size="sm" className="gap-2">
-//           <ArrowLeft className="w-4 h-4" />
-//           Back
-//         </Button>
-
-//         <Button
-//           onClick={handleDownload}
-//           size="sm"
-//           className="gap-2"
-//           disabled={isDownloading}
-//         >
-//           {isDownloading ? (
-//             <Loader2 className="w-4 h-4 animate-spin" />
-//           ) : (
-//             <Download className="w-4 h-4" />
-//           )}
-//           Download PDF
-//         </Button>
-//       </div>
-
-//       <div className="h-[calc(100vh-57px)] bg-white">
-//         <iframe
-//           title={`PDF Preview ${orderId}`}
-//           src={previewSrc}
-//           className="block h-full w-full border-0 bg-white"
-//           style={{
-//             border: "none",
-//             outline: "none",
-//             boxShadow: "none",
-//             margin: 0,
-//             display: "block",
-//             backgroundColor: "white !importanty",
-//           }}
-//         />
-//       </div>
-//     </div>
-//   );
-// }
-
 // src/pages/client/ReportViewerPage.jsx
 import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
@@ -191,8 +31,9 @@ export default function ReportViewerPage() {
     async function loadPDF() {
       try {
         const token = localStorage.getItem("token");
+        const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
         const res = await fetch(
-          `http://localhost:8080/api/client/orders/${orderId}/pdf/preview`,
+          `${apiBase}/api/client/orders/${orderId}/pdf/preview`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             signal: controller.signal,
@@ -304,8 +145,9 @@ export default function ReportViewerPage() {
     setDownloading(true);
     try {
       const token = localStorage.getItem("token");
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
       const res = await fetch(
-        `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
+        `${apiBase}/api/client/orders/${orderId}/pdf/download`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       const blob = await res.blob();

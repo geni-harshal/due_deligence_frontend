@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Axios instance with Bearer token
 export const api = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: import.meta.env.VITE_API_BASE || "http://localhost:8080",
 });
 
 // REQUEST interceptor: attach Bearer token
@@ -130,8 +130,8 @@ export const useGetClientStats = () =>
   useQuery({
     queryKey: ["clientStats"],
     queryFn: () => api.get("/api/client/stats").then((r) => r.data),
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,          // only every 30 seconds
+    refetchOnWindowFocus: false,      // no extra call when tab gets focus
   });
 
 // ==================== CLIENT: ORDERS ====================
@@ -141,12 +141,15 @@ export const useListClientOrders = () =>
     queryFn: () => api.get("/api/client/orders").then((r) => r.data),
     refetchInterval: (query) => {
       const orders = query?.state?.data || [];
-      if (!Array.isArray(orders) || orders.length === 0) return 5000;
-      const terminal = new Set(["completed", "cancelled", "failed", "credit_report_generation_failed", "pdf_generation_failed"]);
+      if (!Array.isArray(orders) || orders.length === 0) return false;   // stop if no data
+      const terminal = new Set([
+        "completed", "cancelled", "failed",
+        "credit_report_generation_failed", "pdf_generation_failed"
+      ]);
       const hasInFlight = orders.some((o) => !terminal.has((o?.status || "").toLowerCase()));
-      return hasInFlight ? 3000 : 10000;
+      return hasInFlight ? 10_000 : false;  // only poll when orders are active, then 10 secs
     },
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,    // optional: avoid extra calls on focus
   });
 
 // new-order-modal calls: createMut.mutate({ data: { productId, selectedCompany, notes } })

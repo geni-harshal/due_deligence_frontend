@@ -29,7 +29,7 @@ function AppLayout({ children, role }) {
   const handleLogout = () => {
     logoutMut.mutate(void 0, {
       onSuccess: () => {
-        window.location.href = "/login";
+       window.location.href = "/login";
       },
       onError: () => {
         localStorage.removeItem("token");

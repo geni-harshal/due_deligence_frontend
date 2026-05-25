@@ -31,8 +31,9 @@ function DownloadButton({ orderId, orderNumber }) {
     setDownloading(true);
     try {
       const token = localStorage.getItem("token");
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
       const response = await fetch(
-        `http://localhost:8080/api/client/orders/${orderId}/pdf/download`,
+        `${apiBase}/api/client/orders/${orderId}/pdf/download`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

@@ -10,7 +10,7 @@ export default function ComprehensiveRequests() {
   const [form] = Form.useForm();
   const [selectedRequest, setSelectedRequest] = useState(null);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
+  const API_BASE = process.env.VITE_API_BASE || 'http://localhost:8080';
 
   const fetchRequests = async () => {
     setLoading(true);

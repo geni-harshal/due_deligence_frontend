@@ -116,13 +116,6 @@ function OpsDashboard() {
           iconBg="emerald"
           trendColor="emerald"
         />
-        <StatCard
-          title="Avg Turnaround"
-          value={statsLoading ? "-" : `${stats?.avgCompletionHours ?? 24}h`}
-          icon={<FileSearch className="w-5 h-5" />}
-          isLoading={statsLoading}
-          iconBg="purple"
-        />
       </div>
 
       <Card>
