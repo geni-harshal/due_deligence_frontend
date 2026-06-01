@@ -96,7 +96,6 @@ function NewOrderModal({ isOpen, onClose }) {
           setAutoFetchMessage(order?.autoFetchMessage || "Order is processed and data is fetched successfully.");
           setStep("success");
           queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
-          queryClient.invalidateQueries({ queryKey: ["clientStats"] });
         },
         onError: (err) => {
           setError(err?.response?.data?.message || err?.message || "Failed to place order.");

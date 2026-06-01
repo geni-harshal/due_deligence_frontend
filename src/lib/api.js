@@ -1,6 +1,7 @@
 // src/lib/api.js
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 // Axios instance with Bearer token
 export const api = axios.create({
@@ -130,7 +131,7 @@ export const useGetClientStats = () =>
   useQuery({
     queryKey: ["clientStats"],
     queryFn: () => api.get("/api/client/stats").then((r) => r.data),
-    refetchInterval: 30_000,          // only every 30 seconds
+    refetchInterval: false,
     refetchOnWindowFocus: false,      // no extra call when tab gets focus
   });
 
@@ -139,18 +140,98 @@ export const useListClientOrders = () =>
   useQuery({
     queryKey: ["clientOrders"],
     queryFn: () => api.get("/api/client/orders").then((r) => r.data),
-    refetchInterval: (query) => {
-      const orders = query?.state?.data || [];
-      if (!Array.isArray(orders) || orders.length === 0) return false;   // stop if no data
-      const terminal = new Set([
-        "completed", "cancelled", "failed",
-        "credit_report_generation_failed", "pdf_generation_failed"
-      ]);
-      const hasInFlight = orders.some((o) => !terminal.has((o?.status || "").toLowerCase()));
-      return hasInFlight ? 10_000 : false;  // only poll when orders are active, then 10 secs
-    },
+    refetchInterval: false,
     refetchOnWindowFocus: false,    // optional: avoid extra calls on focus
   });
+
+export const useClientLiveUpdates = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+    const wsBase = apiBase.replace(/^http/, "ws");
+    let ws = null;
+    let isClosed = false;
+    let reconnectTimer = null;
+    let fullSyncTimer = null;
+
+    const scheduleFullSync = (delay = 1200) => {
+      if (fullSyncTimer) return;
+      fullSyncTimer = window.setTimeout(() => {
+        fullSyncTimer = null;
+        queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
+        queryClient.invalidateQueries({ queryKey: ["clientStats"] });
+      }, delay);
+    };
+
+    const connect = () => {
+      if (isClosed) return;
+      ws = new WebSocket(`${wsBase}/ws/updates`);
+
+      ws.onopen = () => {
+        // Initial sync after connect/reconnect.
+        scheduleFullSync(200);
+      };
+
+      ws.onmessage = (event) => {
+        if (isClosed) return;
+        let payload = { type: "order_update" };
+        try {
+          payload = JSON.parse(event.data || "{}");
+        } catch (_) {}
+
+        if (payload.type === "order_update" && payload.orderId != null && payload.status) {
+          let orderFound = false;
+          queryClient.setQueryData(["clientOrders"], (old) => {
+            if (!Array.isArray(old)) return old;
+            return old.map((o) => {
+              if (String(o?.id) === String(payload.orderId)) {
+                orderFound = true;
+                const completedAt = payload.status === "completed"
+                  ? (o?.completedAt || new Date().toISOString())
+                  : o?.completedAt;
+                return { ...o, status: payload.status, updatedAt: new Date().toISOString(), completedAt };
+              }
+              return o;
+            });
+          });
+
+          if (!orderFound) {
+            scheduleFullSync(200);
+          } else if (payload.status === "completed" || payload.status === "pdf_generated" || payload.status === "pdf_generation_failed") {
+            scheduleFullSync(1200);
+          }
+          return;
+        }
+
+        if (payload.type === "stats_update") {
+          queryClient.invalidateQueries({ queryKey: ["clientStats"] });
+          return;
+        }
+
+        scheduleFullSync(1500);
+      };
+
+      ws.onclose = () => {
+        if (isClosed) return;
+        reconnectTimer = window.setTimeout(connect, 1500);
+      };
+
+      ws.onerror = () => {
+        try { ws?.close(); } catch (_) {}
+      };
+    };
+
+    connect();
+
+    return () => {
+      isClosed = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      if (fullSyncTimer) window.clearTimeout(fullSyncTimer);
+      try { ws?.close(); } catch (_) {}
+    };
+  }, [queryClient]);
+};
 
 // new-order-modal calls: createMut.mutate({ data: { productId, selectedCompany, notes } })
 export const useCreateOrder = () => {

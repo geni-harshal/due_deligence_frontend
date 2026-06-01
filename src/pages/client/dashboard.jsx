@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGetClientStats, useListClientOrders } from "@/lib/api";
+import { useListClientOrders } from "@/lib/api";
 import {
   PageHeader,
   StatCard,
@@ -42,7 +42,9 @@ function DownloadButton({ orderId, orderNumber }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `DDR_${orderNumber}.pdf`;
+      const disposition = res.headers.get("content-disposition") || "";
+      const fileNameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+      a.download = fileNameMatch?.[1] || `OMNIFI_${orderNumber}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -58,12 +60,21 @@ function DownloadButton({ orderId, orderNumber }) {
 }
 
 function ClientDashboard() {
-  const { data: stats, isLoading: statsLoading } = useGetClientStats();
   const { data: orders, isLoading: ordersLoading } = useListClientOrders();
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
 
   const recentOrders = orders?.slice(0, 5) ?? [];
   const completedOrders = orders?.filter((o) => o.status === "completed") ?? [];
+  const totalOrders = orders?.length ?? 0;
+  const pendingOrders = (orders ?? []).filter((o) => o.status !== "completed").length;
+  const completedCount = completedOrders.length;
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const ordersThisMonth = (orders ?? []).filter((o) => {
+    if (!o?.createdAt) return false;
+    const d = new Date(o.createdAt);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).length;
 
   return (
     <div>
@@ -81,34 +92,34 @@ function ClientDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Orders"
-          value={statsLoading ? "—" : stats?.totalOrders ?? 0}
+          value={ordersLoading ? "—" : totalOrders}
           icon={<FileText className="w-5 h-5" />}
-          isLoading={statsLoading}
+          isLoading={ordersLoading}
           iconBg="blue"
         />
         <StatCard
           title="In Progress"
-          value={statsLoading ? "—" : stats?.pendingOrders ?? 0}
+          value={ordersLoading ? "—" : pendingOrders}
           icon={<Clock className="w-5 h-5" />}
-          isLoading={statsLoading}
+          isLoading={ordersLoading}
           iconBg="amber"
-          trend={stats?.pendingOrders ? "Being processed" : "All clear"}
-          trendColor={stats?.pendingOrders ? "amber" : "emerald"}
+          trend={pendingOrders ? "Being processed" : "All clear"}
+          trendColor={pendingOrders ? "amber" : "emerald"}
         />
         <StatCard
           title="Reports Ready"
-          value={statsLoading ? "—" : stats?.completedOrders ?? 0}
+          value={ordersLoading ? "—" : completedCount}
           icon={<CheckCircle2 className="w-5 h-5" />}
-          isLoading={statsLoading}
+          isLoading={ordersLoading}
           iconBg="emerald"
-          trend={stats?.completedOrders ? "Available to download" : void 0}
+          trend={completedCount ? "Available to download" : void 0}
           trendColor="emerald"
         />
         <StatCard
           title="This Month"
-          value={statsLoading ? "—" : stats?.ordersThisMonth ?? 0}
+          value={ordersLoading ? "—" : ordersThisMonth}
           icon={<CalendarDays className="w-5 h-5" />}
-          isLoading={statsLoading}
+          isLoading={ordersLoading}
           iconBg="purple"
         />
       </div>
@@ -285,3 +296,4 @@ function ClientDashboard() {
 }
 
 export { ClientDashboard as default };
+

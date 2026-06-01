@@ -44,7 +44,9 @@ function DownloadButton({ orderId, orderNumber }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `DDR-${orderNumber}.pdf`;
+      const disposition = response.headers.get("content-disposition") || "";
+      const fileNameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+      a.download = fileNameMatch?.[1] || `OMNIFI_${orderNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
